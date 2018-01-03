@@ -1,61 +1,61 @@
 package local
 
 import (
-	"bytes"
 	"context"
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 )
 
-//Command is the request body structure
-type Command struct {
-	XMLName xml.Name `xml:"Command"`
-	Name    string   `xml:"Name"`
+//New returns an API with a default http client and the provided config
+func New(config Config) API {
+	return API{&http.Client{}, config}
 }
 
-//WifiStatusCommand creates the Command request for wifi status
-func WifiStatusCommand() Command {
-	return Command{Name: "wifi_status"}
+//API wraps up the eagle local api for ease of use
+type API struct {
+	Client *http.Client
+	Config Config
 }
 
-//DeviceListCommand creates the Command request for device lists
-func DeviceListCommand() Command {
-	return Command{Name: "device_list"}
+//DeviceList returns the configured devices
+func (a API) DeviceList(ctx context.Context) ([]DeviceListItem, error) {
+	deviceList := DeviceList{}
+	err := a.post(ctx, DeviceListCommand(), &deviceList)
+	return deviceList.Device, err
 }
 
-//PostManagerEndpoint returns the url to the PostManagerEndpoint
-func PostManagerEndpoint(config Config) string {
-	return fmt.Sprintf("http://%s/cgi-bin/post_manager", config.Location)
+//WifiStatus returns the wifi status of the eagle 200
+func (a API) WifiStatus(ctx context.Context) (WifiStatus, error) {
+	status := WifiStatus{}
+	err := a.post(ctx, WifiStatusCommand(), &status)
+	return status, err
 }
 
-//PostCommand posts the provided command to the location using the provided client
-func PostCommand(ctx context.Context, client *http.Client, config Config, command interface{}) (code int, body []byte, err error) {
-	var (
-		commandBody []byte
-		req         *http.Request
-		resp        *http.Response
-	)
-
-	commandBody, err = xml.Marshal(command)
+func (a API) post(ctx context.Context, command interface{}, result interface{}) error {
+	code, body, err := PostCommand(ctx, a.Client, a.Config, command)
 	if err != nil {
-		return
+		return err
 	}
 
-	req, err = http.NewRequest("POST", PostManagerEndpoint(config), bytes.NewReader(commandBody))
+	return unmarshal(code, body, result)
+}
+
+func unmarshal(code int, body []byte, v interface{}) error {
+	err := xml.Unmarshal(body, v)
 	if err != nil {
-		return
+		return &unmarshalError{code, body, err}
 	}
 
-	req.SetBasicAuth(config.User, config.Password)
+	return nil
+}
 
-	resp, err = client.Do(req)
-	if err != nil {
-		return
-	}
+type unmarshalError struct {
+	code int
+	body []byte
+	err  error
+}
 
-	code = resp.StatusCode
-	body, err = ioutil.ReadAll(resp.Body)
-	return
+func (u *unmarshalError) Error() string {
+	return fmt.Sprintf("unable to unmarshal %v: %v - %s", u.err, u.code, u.body)
 }
