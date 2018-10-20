@@ -19,9 +19,16 @@ type API struct {
 }
 
 //DeviceQuery returns the queried variable
-func (a API) DeviceQuery(ctx context.Context, hardwareAddress string, variable string) (DeviceQueryResponse, error) {
+func (a API) DeviceQuery(ctx context.Context, hardwareAddress string, variables ...string) (DeviceQueryResponse, error) {
 	deviceResponse := DeviceQueryResponse{}
-	err := a.post(ctx, NewDeviceQueryCommand(hardwareAddress, variable), &deviceResponse)
+
+	for _, v := range variables {
+		if v == "zigbee:Multiplier" || v == "zigbee:Divisor" {
+			return deviceResponse, fmt.Errorf("The nest returns invalid xml for Multiplier and Divisor descriptions so these variables are not allowed inqueries")
+		}
+	}
+
+	err := a.post(ctx, NewDeviceQueryCommand(hardwareAddress, variables...), &deviceResponse)
 	return deviceResponse, err
 }
 
