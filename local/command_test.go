@@ -30,7 +30,7 @@ func TestPostCommand(t *testing.T) {
 	config := TestConfigOrSkip(t)
 	ctx := context.Background()
 
-	code, body, err := PostCommand(ctx, &http.Client{}, config, DeviceListCommand())
+	code, body, err := PostCommand(ctx, &http.Client{}, config, NewDeviceListCommand())
 	require.NoError(t, err, fmt.Sprintf("%v - %s", code, body))
 
 	assert.Equal(t, http.StatusOK, code)

@@ -2,8 +2,8 @@ package local
 
 import "encoding/xml"
 
-//WifiStatusCommand creates the Command request for wifi status
-func WifiStatusCommand() Command {
+//NewWifiStatusCommand creates the Command request for wifi status
+func NewWifiStatusCommand() Command {
 	return Command{Name: "wifi_status"}
 }
 

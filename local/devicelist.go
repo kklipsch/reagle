@@ -5,7 +5,7 @@ import (
 )
 
 //DeviceListCommand creates the Command request for device lists
-func DeviceListCommand() Command {
+func NewDeviceListCommand() Command {
 	return Command{Name: "device_list"}
 }
 

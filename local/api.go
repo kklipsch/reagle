@@ -28,14 +28,14 @@ func (a API) DeviceQuery(ctx context.Context, hardwareAddress string, variable s
 //DeviceList returns the configured devices
 func (a API) DeviceList(ctx context.Context) ([]Device, error) {
 	deviceList := DeviceList{}
-	err := a.post(ctx, DeviceListCommand(), &deviceList)
+	err := a.post(ctx, NewDeviceListCommand(), &deviceList)
 	return deviceList.Device, err
 }
 
 //WifiStatus returns the wifi status of the eagle 200
 func (a API) WifiStatus(ctx context.Context) (WifiStatus, error) {
 	status := WifiStatus{}
-	err := a.post(ctx, WifiStatusCommand(), &status)
+	err := a.post(ctx, NewWifiStatusCommand(), &status)
 	return status, err
 }
 
