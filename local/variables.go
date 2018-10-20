@@ -2,6 +2,11 @@ package local
 
 import "encoding/xml"
 
+type VariableNames struct {
+	XMLName  xml.Name `xml:"Variables"`
+	Variable []string
+}
+
 type Variables struct {
 	XMLName  xml.Name `xml:"Variables"`
 	Variable []Variable

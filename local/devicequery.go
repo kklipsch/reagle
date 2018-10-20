@@ -2,7 +2,7 @@ package local
 
 import "encoding/xml"
 
-//DeviceQueryCommand is the request body structure
+//DeviceQueryCommand allows you to query variables
 type DeviceQueryCommand struct {
 	Command
 	DeviceDetails DeviceDetails

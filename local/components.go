@@ -18,6 +18,19 @@ func NewComponent(name string, variable ...string) Component {
 	}
 }
 
+type ComponentNames struct {
+	XMLName   xml.Name `xml:"Components"`
+	Component []ComponentName
+}
+
+type ComponentName struct {
+	XMLName    xml.Name `xml:"Component"`
+	Name       string
+	HardwareID string `xml:"HarwareId"`
+	FixedID    int    `xml:"FixedId"`
+	Variables  VariableNames
+}
+
 type Components struct {
 	XMLName   xml.Name `xml:"Components"`
 	Component []Component

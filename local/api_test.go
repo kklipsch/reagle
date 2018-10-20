@@ -41,10 +41,10 @@ func TestDeviceQueryDivisorMultiplier(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, len(items) > 0)
 
-	_, err := api.DeviceQuery(ctx, items[0].HardwareAddress, "zigbee:Multiplier")
+	_, err = api.DeviceQuery(ctx, items[0].HardwareAddress, "zigbee:Multiplier")
 	require.Error(t, err)
 
-	_, err := api.DeviceQuery(ctx, items[0].HardwareAddress, "zigbee:Divisor")
+	_, err = api.DeviceQuery(ctx, items[0].HardwareAddress, "zigbee:Divisor")
 	require.Error(t, err)
 
 }
@@ -65,4 +65,48 @@ func TestDeviceQuery(t *testing.T) {
 	require.NotEmpty(t, resp.Components.Component[0].Variables.Variable[0].Value, fmt.Sprintf("%v", resp))
 
 	log.Printf("%v", resp)
+}
+
+func TestDeviceDetails(t *testing.T) {
+	config := TestConfigOrSkip(t)
+	ctx := context.Background()
+	api := New(config)
+
+	items, err := api.DeviceList(ctx)
+	require.NoError(t, err)
+	require.True(t, len(items) > 0)
+
+	resp, err := api.DeviceDetails(ctx, items[0].HardwareAddress)
+	require.NoError(t, err)
+	require.True(t, len(resp.Components.Component) > 0, fmt.Sprintf("%v", resp))
+	require.True(t, len(resp.Components.Component[0].Variables.Variable) > 0, fmt.Sprintf("%v", resp))
+
+	log.Printf("%v", resp)
+}
+
+func TestVariables(t *testing.T) {
+	config := TestConfigOrSkip(t)
+	ctx := context.Background()
+	api := New(config)
+
+	items, err := api.DeviceList(ctx)
+	require.NoError(t, err)
+	require.True(t, len(items) > 0)
+
+	hardwareAddress := items[0].HardwareAddress
+	resp, err := api.DeviceDetails(ctx, hardwareAddress)
+	require.NoError(t, err)
+
+	for _, component := range resp.Components.Component {
+		for _, variable := range component.Variables.Variable {
+			if variable == "zigbee:Multiplier" || variable == "zigbee:Divisor" {
+				continue
+			}
+
+			resp, err := api.DeviceQuery(ctx, hardwareAddress, variable)
+			require.NoError(t, err)
+			//log.Printf("%v %v %v", variable, component.Name, resp)
+		}
+	}
+
 }

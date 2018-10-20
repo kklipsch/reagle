@@ -18,6 +18,13 @@ type API struct {
 	Config Config
 }
 
+//DeviceDetails returns the available variables
+func (a API) DeviceDetails(ctx context.Context, hardwareAddress string) (DeviceDetailsResponse, error) {
+	deviceResponse := DeviceDetailsResponse{}
+	err := a.post(ctx, NewDeviceDetailsCommand(hardwareAddress), &deviceResponse)
+	return deviceResponse, err
+}
+
 //DeviceQuery returns the queried variable
 func (a API) DeviceQuery(ctx context.Context, hardwareAddress string, variables ...string) (DeviceQueryResponse, error) {
 	deviceResponse := DeviceQueryResponse{}
