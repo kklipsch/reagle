@@ -2,6 +2,7 @@ package local
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"testing"
 
@@ -28,4 +29,22 @@ func TestDeviceList(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, len(items) > 0)
 	log.Printf("%v", items)
+}
+
+func TestDeviceQuery(t *testing.T) {
+	config := TestConfigOrSkip(t)
+	ctx := context.Background()
+	api := New(config)
+
+	items, err := api.DeviceList(ctx)
+	require.NoError(t, err)
+	require.True(t, len(items) > 0)
+
+	resp, err := api.DeviceQuery(ctx, items[0].HardwareAddress, "zigbee:InstantaneousDemand")
+	require.NoError(t, err)
+	require.True(t, len(resp.Components.Component) > 0, fmt.Sprintf("%v", resp))
+	require.True(t, len(resp.Components.Component[0].Variables.Variable) > 0, fmt.Sprintf("%v", resp))
+	require.NotEmpty(t, resp.Components.Component[0].Variables.Variable[0].Value, fmt.Sprintf("%v", resp))
+
+	log.Printf("%v", resp)
 }
