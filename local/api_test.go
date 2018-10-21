@@ -103,7 +103,7 @@ func TestVariables(t *testing.T) {
 				continue
 			}
 
-			resp, err := api.DeviceQuery(ctx, hardwareAddress, variable)
+			_, err := api.DeviceQuery(ctx, hardwareAddress, variable)
 			require.NoError(t, err)
 			//log.Printf("%v %v %v", variable, component.Name, resp)
 		}

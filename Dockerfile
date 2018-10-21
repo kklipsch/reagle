@@ -1,4 +1,4 @@
-FROM golang:1.11.0-alpine3.8 as basebuild
+FROM golang:1.11.0-alpine3.8 as builder
 
 ARG REAGLE_LOCAL_LOCATION
 ARG REAGLE_LOCAL_USER 
@@ -15,5 +15,22 @@ WORKDIR /go/src/$PROJECT_PATH
 COPY . .
 
 RUN go vet $PROJECT_PATH/local
+RUN go vet $PROJECT_PATH/cmd/reagled
 RUN go test -v ./... 
 
+RUN mkdir -p /out
+RUN go build -o /out/reagled $PROJECT_PATH/cmd/reagled
+
+FROM alpine:3.8
+
+ENV REAGLE_LOCAL_LOCATION "localhost"
+ENV REAGLE_LOCAL_USER "fake" 
+ENV REAGLE_LOCAL_PASSWORD "fail"
+ENV REAGLED_ADDRESS ":9000"
+EXPOSE 9000
+
+WORKDIR /root/
+COPY --from=builder /out/reagled /usr/local/bin/reagled
+RUN apk --no-cache add ca-certificates
+
+ENTRYPOINT ["reagled"]
