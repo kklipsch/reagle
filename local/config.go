@@ -35,10 +35,18 @@ func TestConfigOrSkip(t testing.TB) Config {
 
 //ConfigFromEnv returns a Config and true using the environment variables or a Config and false if any aren't set
 func ConfigFromEnv() (Config, bool) {
+	//unless affirmatively set assume that they have a firmware with the bug around variables
+	filter := BadResponseVariables
+	if strings.ToLower(strings.TrimSpace(os.Getenv(ImprovedFirmwareEnv))) == "yes" {
+		filter = NoFilter
+	}
+
 	config := Config{
 		Location: os.Getenv(LocationEnv),
 		User:     os.Getenv(UserEnv),
 		password: os.Getenv(PasswordEnv),
+
+		Filter: filter,
 
 		DebugRequest:  strings.TrimSpace(os.Getenv(DebugRequestEnv)) != "",
 		DebugResponse: strings.TrimSpace(os.Getenv(DebugResponseEnv)) != "",
@@ -63,7 +71,7 @@ type Config struct {
 
 func (c Config) GetFilter() VariableFilter {
 	if c.Filter == nil {
-		return DefaultFilter
+		return NoFilter
 	}
 
 	return c.Filter

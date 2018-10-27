@@ -3,6 +3,7 @@ package local
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"testing"
@@ -105,9 +106,11 @@ func TestVariables(t *testing.T) {
 	resp, err := api.DeviceDetails(ctx, hardwareAddress)
 	require.NoError(t, err)
 
+	filter := config.GetFilter()
 	for _, component := range resp.Components.Component {
 		for _, variable := range component.Variables.Variable {
-			if variable == "zigbee:Multiplier" || variable == "zigbee:Divisor" {
+			if filter.Exclude(variable) {
+				log.Printf("skipping %s due to variable filter: %v", variable, filter)
 				continue
 			}
 

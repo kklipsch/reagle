@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"testing"
@@ -34,5 +33,4 @@ func TestPostCommand(t *testing.T) {
 	require.NoError(t, err, fmt.Sprintf("%v - %s", code, body))
 
 	assert.Equal(t, http.StatusOK, code)
-	log.Printf("%s", body)
 }
