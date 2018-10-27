@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -60,4 +61,24 @@ func instrumentHandler(handlerName string, h http.Handler) http.Handler {
 				promhttp.InstrumentHandlerRequestSize(requestSize.MustCurryWith(prometheus.Labels{"handler": handlerName}),
 					promhttp.InstrumentHandlerResponseSize(responseSize.MustCurryWith(prometheus.Labels{"handler": handlerName}),
 						h)))))
+}
+
+func instrumentClient(clientName string, inner http.RoundTripper) (http.RoundTripper, error) {
+	if inner == nil {
+		inner = http.DefaultTransport
+	}
+
+	count, err := requestsCount.CurryWith(prometheus.Labels{"handler": fmt.Sprintf("client_%s", clientName)})
+	if err != nil {
+		return nil, err
+	}
+
+	duration, err := requestsDuration.CurryWith(prometheus.Labels{"handler": fmt.Sprintf("client_%s", clientName)})
+	if err != nil {
+		return nil, err
+	}
+
+	return promhttp.InstrumentRoundTripperInFlight(requestsInFlightGauge,
+		promhttp.InstrumentRoundTripperCounter(count,
+			promhttp.InstrumentRoundTripperDuration(duration, inner))), nil
 }

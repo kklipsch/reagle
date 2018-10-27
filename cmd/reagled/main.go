@@ -83,6 +83,11 @@ func start(cliCtx *cli.Context) error {
 	applicationLogger.WithFields(log.Fields{"config": config}).Infoln("configured")
 
 	localAPI := local.New(config.LocalConfig)
+	localAPI.Client.Transport, err = instrumentClient("local", localAPI.Client.Transport)
+	if err != nil {
+		err = fmt.Errorf("error instrumenting local client: %v", err)
+		return cli.NewExitError(err, 3)
+	}
 
 	errors := make(chan error, 1)
 	go endpoint(config, localAPI, errors)
