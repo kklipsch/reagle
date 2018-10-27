@@ -3,7 +3,6 @@ package local
 import (
 	"context"
 	"fmt"
-	"log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,9 +14,8 @@ func TestWifiStatus(t *testing.T) {
 	ctx := context.Background()
 	api := New(config)
 
-	status, err := api.WifiStatus(ctx)
+	_, err := api.WifiStatus(ctx)
 	require.NoError(t, err)
-	log.Printf("%v", status)
 }
 
 func TestDeviceList(t *testing.T) {
@@ -28,7 +26,6 @@ func TestDeviceList(t *testing.T) {
 	items, err := api.DeviceList(ctx)
 	require.NoError(t, err)
 	assert.True(t, len(items) > 0)
-	log.Printf("%v", items)
 }
 
 func TestDeviceQueryDivisorMultiplier(t *testing.T) {
@@ -46,7 +43,6 @@ func TestDeviceQueryDivisorMultiplier(t *testing.T) {
 
 	_, err = api.DeviceQuery(ctx, items[0].HardwareAddress, "zigbee:Divisor")
 	require.Error(t, err)
-
 }
 
 func TestDeviceQuery(t *testing.T) {
@@ -63,8 +59,6 @@ func TestDeviceQuery(t *testing.T) {
 	require.True(t, len(resp.Components.Component) > 0, fmt.Sprintf("%v", resp))
 	require.Equal(t, len(resp.Components.Component[0].Variables.Variable), 2, fmt.Sprintf("%v", resp))
 	require.NotEmpty(t, resp.Components.Component[0].Variables.Variable[0].Value, fmt.Sprintf("%v", resp))
-
-	log.Printf("%v", resp)
 }
 
 func TestDeviceDetails(t *testing.T) {
@@ -80,8 +74,6 @@ func TestDeviceDetails(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, len(resp.Components.Component) > 0, fmt.Sprintf("%v", resp))
 	require.True(t, len(resp.Components.Component[0].Variables.Variable) > 0, fmt.Sprintf("%v", resp))
-
-	log.Printf("%v", resp)
 }
 
 func TestVariables(t *testing.T) {
@@ -105,7 +97,6 @@ func TestVariables(t *testing.T) {
 
 			_, err := api.DeviceQuery(ctx, hardwareAddress, variable)
 			require.NoError(t, err)
-			//log.Printf("%v %v %v", variable, component.Name, resp)
 		}
 	}
 

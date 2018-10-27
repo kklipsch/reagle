@@ -4,12 +4,16 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
+	"log"
 	"net/http"
 )
 
 //New returns an API with a default http client and the provided config
 func New(config Config) API {
-	return API{&http.Client{}, config}
+	return API{
+		Client: &http.Client{},
+		Config: config,
+	}
 }
 
 //API wraps up the eagle local api for ease of use
@@ -56,7 +60,11 @@ func (a API) WifiStatus(ctx context.Context) (WifiStatus, error) {
 func (a API) post(ctx context.Context, command interface{}, result interface{}) error {
 	code, body, err := PostCommand(ctx, a.Client, a.Config, command)
 	if err != nil {
-		return err
+		return fmt.Errorf("%v %v\n %s", code, err, body)
+	}
+
+	if a.Config.DebugResponse {
+		log.Printf("%v - %s", code, body)
 	}
 
 	return unmarshal(code, body, result)

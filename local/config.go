@@ -2,6 +2,7 @@ package local
 
 import (
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -12,6 +13,11 @@ const (
 	UserEnv string = "REAGLE_LOCAL_USER"
 	//PasswordEnv is the name of the environment variable that stores the password for the local api authentication, usually the install code of the eagle device
 	PasswordEnv string = "REAGLE_LOCAL_PASSWORD"
+
+	//DebugRequestEnv will turn on request debugging if it is any value other than empty
+	DebugRequestEnv string = "REAGLE_DEBUG_REQUEST"
+	//DebugResponseEnv will turn on response debugging if it is any value other than empty
+	DebugResponseEnv string = "REAGLE_DEBUG_RESPONSE"
 )
 
 //TestConfigOrSkip returns teh Config from the environment variables or skips if any aren't set
@@ -29,10 +35,13 @@ func ConfigFromEnv() (Config, bool) {
 	config := Config{
 		Location: os.Getenv(LocationEnv),
 		User:     os.Getenv(UserEnv),
-		Password: os.Getenv(PasswordEnv),
+		password: os.Getenv(PasswordEnv),
+
+		DebugRequest:  strings.TrimSpace(os.Getenv(DebugRequestEnv)) != "",
+		DebugResponse: strings.TrimSpace(os.Getenv(DebugResponseEnv)) != "",
 	}
 
-	ok := config.Location != "" && config.User != "" && config.Password != ""
+	ok := config.Location != "" && config.User != "" && config.password != ""
 
 	return config, ok
 }
@@ -41,5 +50,8 @@ func ConfigFromEnv() (Config, bool) {
 type Config struct {
 	Location string
 	User     string
-	Password string
+	password string
+
+	DebugRequest  bool
+	DebugResponse bool
 }

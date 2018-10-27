@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -27,12 +28,18 @@ func PostCommand(ctx context.Context, client *http.Client, config Config, comman
 		return
 	}
 
-	req, err = http.NewRequest("POST", PostManagerEndpoint(config), bytes.NewReader(commandBody))
+	endpoint := PostManagerEndpoint(config)
+
+	if config.DebugRequest {
+		log.Printf("%s\n%s", endpoint, commandBody)
+	}
+
+	req, err = http.NewRequest("POST", endpoint, bytes.NewReader(commandBody))
 	if err != nil {
 		return
 	}
 
-	req.SetBasicAuth(config.User, config.Password)
+	req.SetBasicAuth(config.User, config.password)
 
 	resp, err = client.Do(req)
 	if err != nil {
