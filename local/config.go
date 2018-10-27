@@ -1,6 +1,7 @@
 package local
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -52,9 +53,27 @@ func ConfigFromEnv() (Config, bool) {
 		DebugResponse: strings.TrimSpace(os.Getenv(DebugResponseEnv)) != "",
 	}
 
-	ok := config.Location != "" && config.User != "" && config.password != ""
+	return config, ConfigOK(config)
+}
 
-	return config, ok
+//ConfigOK returns true if the Config can be used
+func ConfigOK(config Config) bool {
+	return config.Location != "" && config.User != "" && config.password != ""
+}
+
+//ValidateConfig returns an error if the Config is not ready for use
+func ValidateConfig(c Config) error {
+	if !ConfigOK(c) {
+		return fmt.Errorf("Must provide %s, %s, %s: (%s, %s, '*')", LocationEnv, UserEnv, PasswordEnv, c.Location, c.User)
+	}
+
+	return nil
+}
+
+//SetPassword sets the password on the config
+func SetPassword(c Config, password string) Config {
+	c.password = password
+	return c
 }
 
 //Config is used to locate/auth the eagle local api

@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/kklipsch/reagle/local"
 	log "github.com/sirupsen/logrus"
 	cli "gopkg.in/urfave/cli.v1"
 )
@@ -22,8 +23,29 @@ var (
 		Value:  ":9000",
 	}
 
+	LocationFlag = cli.StringFlag{
+		Name:   "location",
+		Usage:  "eagle address",
+		EnvVar: local.LocationEnv,
+	}
+
+	UserFlag = cli.StringFlag{
+		Name:   "user",
+		Usage:  "eagle user",
+		EnvVar: local.UserEnv,
+	}
+
+	PasswordFlag = cli.StringFlag{
+		Name:   "password",
+		Usage:  "eagle password",
+		EnvVar: local.PasswordEnv,
+	}
+
 	flags = []cli.Flag{
 		AddressFlag,
+		LocationFlag,
+		UserFlag,
+		PasswordFlag,
 	}
 )
 
@@ -60,8 +82,10 @@ func start(cliCtx *cli.Context) error {
 
 	applicationLogger.WithFields(log.Fields{"config": config}).Infoln("configured")
 
+	localAPI := local.New(config.LocalConfig)
+
 	errors := make(chan error, 1)
-	go endpoint(config, errors)
+	go endpoint(config, localAPI, errors)
 	go dataGatherer(ctx, config, errors)
 
 	err = nil

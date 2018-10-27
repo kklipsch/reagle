@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 
+	"github.com/kklipsch/reagle/local"
 	cli "gopkg.in/urfave/cli.v1"
 )
 
 type Config struct {
-	Address string
+	Address     string
+	LocalConfig local.Config
 }
 
 func configure(ctx context.Context, cliCtx *cli.Context) (Config, error) {
@@ -15,5 +17,13 @@ func configure(ctx context.Context, cliCtx *cli.Context) (Config, error) {
 		Address: cliCtx.String(AddressFlag.Name),
 	}
 
-	return cfg, nil
+	localCfg := local.Config{
+		Location: cliCtx.String(LocationFlag.Name),
+		User:     cliCtx.String(UserFlag.Name),
+	}
+
+	cfg.LocalConfig = local.SetPassword(localCfg, cliCtx.String(PasswordFlag.Name))
+
+	err := local.ValidateConfig(cfg.LocalConfig)
+	return cfg, err
 }
