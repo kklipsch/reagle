@@ -33,13 +33,22 @@ func (a API) DeviceDetails(ctx context.Context, hardwareAddress string) (DeviceD
 func (a API) DeviceQuery(ctx context.Context, hardwareAddress string, variables ...string) (DeviceQueryResponse, error) {
 	deviceResponse := DeviceQueryResponse{}
 
+	var toquery []string
+	filter := a.Config.GetFilter()
 	for _, v := range variables {
-		if v == "zigbee:Multiplier" || v == "zigbee:Divisor" {
-			return deviceResponse, fmt.Errorf("The nest returns invalid xml for Multiplier and Divisor descriptions so these variables are not allowed inqueries")
+		if filter.Exclude(v) {
+			log.Printf("Excluding %v due to filter: %v", v, filter)
+			continue
 		}
+
+		toquery = append(toquery, v)
 	}
 
-	err := a.post(ctx, NewDeviceQueryCommand(hardwareAddress, variables...), &deviceResponse)
+	if len(toquery) < 1 {
+		return deviceResponse, fmt.Errorf("Post filter (%v) no variables were available: %v", filter, variables)
+	}
+
+	err := a.post(ctx, NewDeviceQueryCommand(hardwareAddress, toquery...), &deviceResponse)
 	return deviceResponse, err
 }
 

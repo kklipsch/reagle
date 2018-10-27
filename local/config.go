@@ -18,6 +18,9 @@ const (
 	DebugRequestEnv string = "REAGLE_DEBUG_REQUEST"
 	//DebugResponseEnv will turn on response debugging if it is any value other than empty
 	DebugResponseEnv string = "REAGLE_DEBUG_RESPONSE"
+
+	//ImprovedFirmwareEnv set to yes if your firmware responds with well formed queries to multiplier and divisor queries, set to no if not
+	ImprovedFirmwareEnv string = "REAGLE_IMPROVED_FIRMWARE"
 )
 
 //TestConfigOrSkip returns teh Config from the environment variables or skips if any aren't set
@@ -54,4 +57,14 @@ type Config struct {
 
 	DebugRequest  bool
 	DebugResponse bool
+
+	Filter VariableFilter
+}
+
+func (c Config) GetFilter() VariableFilter {
+	if c.Filter == nil {
+		return DefaultFilter
+	}
+
+	return c.Filter
 }

@@ -3,6 +3,8 @@ package local
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,7 +31,13 @@ func TestDeviceList(t *testing.T) {
 }
 
 func TestDeviceQueryDivisorMultiplier(t *testing.T) {
-	//The nest returns invalid xml if you try to query the Multiplier or Divisor variables as the description has unescaped & in it
+	improvedFirmware := strings.ToLower(strings.TrimSpace(os.Getenv(ImprovedFirmwareEnv)))
+	if !(improvedFirmware == "yes" || improvedFirmware == "no") {
+		t.Skipf("This test requires %s to be set to either 'yes' or 'no' ('%s')", ImprovedFirmwareEnv, improvedFirmware)
+	}
+
+	improved := improvedFirmware == "yes"
+
 	config := TestConfigOrSkip(t)
 	ctx := context.Background()
 	api := New(config)
@@ -39,10 +47,18 @@ func TestDeviceQueryDivisorMultiplier(t *testing.T) {
 	require.True(t, len(items) > 0)
 
 	_, err = api.DeviceQuery(ctx, items[0].HardwareAddress, "zigbee:Multiplier")
-	require.Error(t, err)
+	if improved {
+		assert.NoError(t, err)
+	} else {
+		assert.Error(t, err)
+	}
 
 	_, err = api.DeviceQuery(ctx, items[0].HardwareAddress, "zigbee:Divisor")
-	require.Error(t, err)
+	if improved {
+		assert.NoError(t, err)
+	} else {
+		assert.Error(t, err)
+	}
 }
 
 func TestDeviceQuery(t *testing.T) {
