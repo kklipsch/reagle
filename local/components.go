@@ -19,27 +19,27 @@ func NewComponent(name string, variable ...string) Component {
 }
 
 type ComponentNames struct {
-	XMLName   xml.Name `xml:"Components"`
-	Component []ComponentName
+	XMLName   xml.Name        `xml:"Components" json:"-"`
+	Component []ComponentName `json:"components"`
 }
 
 type ComponentName struct {
-	XMLName    xml.Name `xml:"Component"`
-	Name       string
-	HardwareID string `xml:"HarwareId"`
-	FixedID    int    `xml:"FixedId"`
-	Variables  VariableNames
+	XMLName    xml.Name      `xml:"Component" json:"-"`
+	Name       string        `json:"name"`
+	HardwareID string        `xml:"HarwareId" json:"hardware_id"`
+	FixedID    int           `xml:"FixedId" json:"fixed_id"`
+	Variables  VariableNames `json:"variables"`
 }
 
 type Components struct {
-	XMLName   xml.Name `xml:"Components"`
-	Component []Component
+	XMLName   xml.Name    `xml:"Components" json:"-"`
+	Component []Component `json:"components"`
 }
 
 type Component struct {
-	XMLName    xml.Name `xml:"Component"`
-	Name       string
-	HardwareID string `xml:"HarwareId"`
-	FixedID    int    `xml:"FixedId"`
-	Variables  Variables
+	XMLName    xml.Name  `xml:"Component" json:"-"`
+	Name       string    `json:"name"`
+	HardwareID string    `xml:"HarwareId" json:"hardware_id"`
+	FixedID    int       `xml:"FixedId" json:"fixed_id"`
+	Variables  Variables `json:"variables"`
 }

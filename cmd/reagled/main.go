@@ -89,8 +89,13 @@ func start(cliCtx *cli.Context) error {
 		return cli.NewExitError(err, 3)
 	}
 
+	hardwareAddress, err := getMeterAddress(ctx, localAPI)
+	if err != nil {
+		applicationLogger.WithFields(log.Fields{"error": err}).Errorln("error getting hardware address")
+	}
+
 	errors := make(chan error, 1)
-	go endpoint(config, localAPI, errors)
+	go endpoint(config, hardwareAddress, localAPI, errors)
 	go dataGatherer(ctx, config, errors)
 
 	err = nil

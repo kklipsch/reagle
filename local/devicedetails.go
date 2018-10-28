@@ -9,9 +9,9 @@ type DeviceDetailsCommand struct {
 }
 
 type DeviceDetailsResponse struct {
-	XMLName       xml.Name `xml:"Device"`
-	DeviceDetails DeviceDetails
-	Components    ComponentNames
+	XMLName       xml.Name       `xml:"Device" json:"-"`
+	DeviceDetails DeviceDetails  `json:"details"`
+	Components    ComponentNames `json:"components"`
 }
 
 func NewDeviceDetailsCommand(hardwareAddress string) DeviceDetailsCommand {
