@@ -94,6 +94,10 @@ func TestDeviceDetails(t *testing.T) {
 }
 
 func TestVariables(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Variable test takes a long time")
+	}
+
 	config := TestConfigOrSkip(t)
 	ctx := context.Background()
 	api := New(config)
