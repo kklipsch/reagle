@@ -8,13 +8,13 @@ import (
 
 //DeviceData is the data about a device, it is named Device in some responses and DeviceDetails in others
 type DeviceData struct {
-	HardwareAddress  string
-	Manufacturer     string
-	ModelID          string `xml:"ModelId"`
-	Protocol         string
-	LastContact      string
-	ConnectionStatus string
-	NetworkAddress   string
+	HardwareAddress  string `json:"hardware_address"`
+	Manufacturer     string `json:"manufacturer"`
+	ModelID          string `xml:"ModelId" json:"model_id"`
+	Protocol         string `json:"protocol"`
+	LastContact      string `json:"last_contact"`
+	ConnectionStatus string `json:"connection_status"`
+	NetworkAddress   string `json:"network_address"`
 }
 
 //LastContactTime parses the contact time string into a golang time
@@ -36,11 +36,11 @@ func (item DeviceData) LastContactTime() (t time.Time, err error) {
 //Device is sometimes used
 type Device struct {
 	DeviceData
-	XMLName xml.Name `xml:"Device"`
+	XMLName xml.Name `xml:"Device" json:"-"`
 }
 
 //DeviceDestails is also used
 type DeviceDetails struct {
 	DeviceData
-	XMLName xml.Name `xml:"DeviceDetails"`
+	XMLName xml.Name `xml:"DeviceDetails" json:"-"`
 }

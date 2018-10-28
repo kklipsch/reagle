@@ -12,13 +12,27 @@ import (
 func endpoint(cfg Config, localAPI local.API, errors chan<- error) {
 	router := httprouter.New()
 	router.Handler("GET", "/metrics", instrumentHandler("metrics", promhttp.Handler()))
-	router.Handler("GET", "/local/wifi", instrumentHandler("local_wifi", localWifiHandler(cfg, localAPI, errors)))
+	router.Handler("GET", "/local/wifi", instrumentHandler("local_wifi", localWifiHandler(localAPI, errors)))
+	router.Handler("GET", "/local/devicelist", instrumentHandler("local_devicelist", localDeviceListHandler(localAPI, errors)))
 
 	err := http.ListenAndServe(cfg.Address, router)
 	errors <- err
 }
 
-func localWifiHandler(cfg Config, api local.API, errors chan<- error) http.HandlerFunc {
+func localDeviceListHandler(api local.API, errors chan<- error) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		dl, err := api.DeviceList(r.Context())
+		if err != nil {
+			writeError(w, err, errors, http.StatusInternalServerError)
+			return
+		}
+
+		jsonResponse(w, errors, dl)
+	}
+
+}
+
+func localWifiHandler(api local.API, errors chan<- error) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		wifi, err := api.WifiStatus(r.Context())
 		if err != nil {
