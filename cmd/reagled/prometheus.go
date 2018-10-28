@@ -9,6 +9,11 @@ import (
 )
 
 var (
+	errorsCount = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "errors",
+		Help: "Count of non-fatal errors",
+	})
+
 	requestsInFlightGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "in_flight_requests",
 		Help: "A gauge of requests currently being served.",
@@ -51,6 +56,7 @@ var (
 )
 
 func init() {
+	prometheus.MustRegister(errorsCount)
 	prometheus.MustRegister(requestsInFlightGauge, requestsCount, requestsDuration, requestSize, responseSize)
 }
 

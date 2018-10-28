@@ -7,73 +7,75 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/kklipsch/reagle/local"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	log "github.com/sirupsen/logrus"
 )
 
-func endpoint(cfg Config, hardwareAddress string, localAPI local.API, errors chan<- error) {
+func endpoint(cfg Config, hardwareAddress string, localAPI local.API, fatals chan<- error) {
 	router := httprouter.New()
 	router.Handler("GET", "/metrics", instrumentHandler("metrics", promhttp.Handler()))
-	router.Handler("GET", "/local/wifi", instrumentHandler("local_wifi", localWifiHandler(localAPI, errors)))
-	router.Handler("GET", "/local/devicelist", instrumentHandler("local_devicelist", localDeviceListHandler(localAPI, errors)))
-	router.Handler("GET", "/local/meter", instrumentHandler("local_meter", localMeterHandler(hardwareAddress, localAPI, errors)))
+	router.Handler("GET", "/local/wifi", instrumentHandler("local_wifi", localWifiHandler(localAPI)))
+	router.Handler("GET", "/local/devicelist", instrumentHandler("local_devicelist", localDeviceListHandler(localAPI)))
+	router.Handler("GET", "/local/meter", instrumentHandler("local_meter", localMeterHandler(hardwareAddress, localAPI)))
 
 	err := http.ListenAndServe(cfg.Address, router)
-	errors <- err
+	fatals <- err
 }
 
-func localMeterHandler(address string, api local.API, errors chan<- error) http.HandlerFunc {
+func localMeterHandler(address string, api local.API) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		details, err := api.DeviceDetails(r.Context(), address)
 		if err != nil {
-			writeError(w, err, errors, http.StatusInternalServerError)
+			writeError(w, err, http.StatusInternalServerError)
 			return
 		}
 
-		jsonResponse(w, errors, details)
+		jsonResponse(w, details)
 	}
 }
 
-func localDeviceListHandler(api local.API, errors chan<- error) http.HandlerFunc {
+func localDeviceListHandler(api local.API) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dl, err := api.DeviceList(r.Context())
 		if err != nil {
-			writeError(w, err, errors, http.StatusInternalServerError)
+			writeError(w, err, http.StatusInternalServerError)
 			return
 		}
 
-		jsonResponse(w, errors, dl)
+		jsonResponse(w, dl)
 	}
 
 }
 
-func localWifiHandler(api local.API, errors chan<- error) http.HandlerFunc {
+func localWifiHandler(api local.API) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		wifi, err := api.WifiStatus(r.Context())
 		if err != nil {
-			writeError(w, err, errors, http.StatusInternalServerError)
+			writeError(w, err, http.StatusInternalServerError)
 			return
 		}
 
-		jsonResponse(w, errors, wifi)
+		jsonResponse(w, wifi)
 	}
 }
 
-func jsonResponse(w http.ResponseWriter, errors chan<- error, response interface{}) {
+func jsonResponse(w http.ResponseWriter, response interface{}) {
 	b, err := json.Marshal(response)
 	if err != nil {
-		writeError(w, err, errors, http.StatusInternalServerError)
+		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
 
 	_, err = w.Write(b)
 	if err != nil {
-		writeError(w, err, errors, http.StatusInternalServerError)
+		writeError(w, err, http.StatusInternalServerError)
 		return
 	}
 
 	return
 }
 
-func writeError(w http.ResponseWriter, err error, errors chan<- error, code int) {
-	errors <- err
+func writeError(w http.ResponseWriter, err error, code int) {
+	errorsCount.Inc()
+	applicationLogger.WithFields(log.Fields{"code": code, "error": err}).Errorln("endpoint error")
 	http.Error(w, err.Error(), code)
 }
