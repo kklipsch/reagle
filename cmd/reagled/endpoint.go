@@ -18,6 +18,15 @@ func endpoint(cfg Config, localAPI local.API, errors chan<- error) {
 	errors <- err
 }
 
+type WifiResponse struct {
+	Enabled    string `json:"enabled"`
+	Type       string `json:"type"`
+	SSID       string `json:"ssid"`
+	Encryption string `json:"encryption"`
+	Channel    string `json:"channel"`
+	IPAddress  string `json:"ip_address"`
+}
+
 func localWifiHandler(cfg Config, api local.API, errors chan<- error) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		wifi, err := api.WifiStatus(r.Context())
@@ -26,7 +35,18 @@ func localWifiHandler(cfg Config, api local.API, errors chan<- error) http.Handl
 			return
 		}
 
-		jsonResponse(w, errors, wifi)
+		jsonResponse(w, errors, wifiResponse(wifi))
+	}
+}
+
+func wifiResponse(wifi local.WifiStatus) WifiResponse {
+	return WifiResponse{
+		Enabled:    wifi.Enabled,
+		Type:       wifi.Type,
+		SSID:       wifi.SSID,
+		Encryption: wifi.Encryption,
+		Channel:    wifi.Channel,
+		IPAddress:  wifi.IPAddress,
 	}
 }
 
