@@ -53,6 +53,18 @@ var (
 		EnvVar: local.ImprovedFirmwareEnv,
 	}
 
+	DebugRequestFlag = cli.BoolFlag{
+		Name:   "debug_request",
+		Usage:  "if set requests will be debugged",
+		EnvVar: local.DebugRequestEnv,
+	}
+
+	DebugResponseFlag = cli.BoolFlag{
+		Name:   "debug_response",
+		Usage:  "if set responses will be debugged",
+		EnvVar: local.DebugResponseEnv,
+	}
+
 	flags = []cli.Flag{
 		AddressFlag,
 		LocationFlag,
@@ -60,6 +72,8 @@ var (
 		PasswordFlag,
 		ModelIDFlag,
 		ImprovedFirmwareFlag,
+		DebugRequestFlag,
+		DebugResponseFlag,
 	}
 )
 

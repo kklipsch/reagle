@@ -22,6 +22,8 @@ func configure(ctx context.Context, cliCtx *cli.Context) (Config, error) {
 		User:             cliCtx.String(UserFlag.Name),
 		ModelIDForMeter:  cliCtx.String(ModelIDFlag.Name),
 		ImprovedFirmware: cliCtx.Bool(ImprovedFirmwareFlag.Name),
+		DebugRequest:     cliCtx.Bool(DebugRequestFlag.Name),
+		DebugResponse:    cliCtx.Bool(DebugResponseFlag.Name),
 	}
 
 	cfg.LocalConfig = local.SetPassword(localCfg, cliCtx.String(PasswordFlag.Name))

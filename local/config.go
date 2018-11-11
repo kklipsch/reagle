@@ -58,8 +58,8 @@ func ConfigFromEnv() (Config, bool) {
 
 		ModelIDForMeter: strings.TrimSpace(os.Getenv(MeterModelIDEnv)),
 
-		DebugRequest:  strings.TrimSpace(os.Getenv(DebugRequestEnv)) != "",
-		DebugResponse: strings.TrimSpace(os.Getenv(DebugResponseEnv)) != "",
+		DebugRequest:  strings.TrimSpace(os.Getenv(DebugRequestEnv)) == "true",
+		DebugResponse: strings.TrimSpace(os.Getenv(DebugResponseEnv)) == "true",
 	}
 
 	return config, ConfigOK(config)
