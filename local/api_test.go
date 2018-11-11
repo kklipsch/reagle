@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -32,15 +30,11 @@ func TestDeviceList(t *testing.T) {
 }
 
 func TestDeviceQueryDivisorMultiplier(t *testing.T) {
-	improvedFirmware := strings.ToLower(strings.TrimSpace(os.Getenv(ImprovedFirmwareEnv)))
-	if !(improvedFirmware == "yes" || improvedFirmware == "no") {
-		t.Skipf("This test requires %s to be set to either 'yes' or 'no' ('%s')", ImprovedFirmwareEnv, improvedFirmware)
-	}
-
-	improved := improvedFirmware == "yes"
-
 	config := TestConfigOrSkip(t)
+	config.Filter = NoFilter //want divsor/multiplier in no matter what in this test
+
 	ctx := context.Background()
+
 	api := New(config)
 
 	items, err := api.DeviceList(ctx)
@@ -48,14 +42,14 @@ func TestDeviceQueryDivisorMultiplier(t *testing.T) {
 	require.True(t, len(items) > 0)
 
 	_, err = api.DeviceQuery(ctx, items[0].HardwareAddress, "zigbee:Multiplier")
-	if improved {
+	if config.ImprovedFirmware {
 		assert.NoError(t, err)
 	} else {
 		assert.Error(t, err)
 	}
 
 	_, err = api.DeviceQuery(ctx, items[0].HardwareAddress, "zigbee:Divisor")
-	if improved {
+	if config.ImprovedFirmware {
 		assert.NoError(t, err)
 	} else {
 		assert.Error(t, err)
@@ -74,7 +68,7 @@ func TestDeviceQuery(t *testing.T) {
 	resp, err := api.DeviceQuery(ctx, items[0].HardwareAddress, "zigbee:InstantaneousDemand", "zigbee:Message")
 	require.NoError(t, err)
 	require.True(t, len(resp.Components.Component) > 0, fmt.Sprintf("%v", resp))
-	require.Equal(t, len(resp.Components.Component[0].Variables.Variable), 2, fmt.Sprintf("%v", resp))
+	require.True(t, len(resp.Components.Component[0].Variables.Variable) > 0, fmt.Sprintf("%v", resp))
 	require.NotEmpty(t, resp.Components.Component[0].Variables.Variable[0].Value, fmt.Sprintf("%v", resp))
 }
 

@@ -37,8 +37,10 @@ func TestConfigOrSkip(t testing.TB) Config {
 //ConfigFromEnv returns a Config and true using the environment variables or a Config and false if any aren't set
 func ConfigFromEnv() (Config, bool) {
 	//unless affirmatively set assume that they have a firmware with the bug around variables
+	improved := strings.ToLower(strings.TrimSpace(os.Getenv(ImprovedFirmwareEnv))) == "yes"
+
 	filter := BadResponseVariables
-	if strings.ToLower(strings.TrimSpace(os.Getenv(ImprovedFirmwareEnv))) == "yes" {
+	if improved {
 		filter = NoFilter
 	}
 
@@ -46,6 +48,8 @@ func ConfigFromEnv() (Config, bool) {
 		Location: os.Getenv(LocationEnv),
 		User:     os.Getenv(UserEnv),
 		password: os.Getenv(PasswordEnv),
+
+		ImprovedFirmware: improved,
 
 		Filter: filter,
 
@@ -81,6 +85,9 @@ type Config struct {
 	Location string
 	User     string
 	password string
+
+	//Older versions of the firmware respond with invalid xml for multiplier/divisor
+	ImprovedFirmware bool
 
 	DebugRequest  bool
 	DebugResponse bool
