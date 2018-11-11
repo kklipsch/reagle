@@ -47,9 +47,11 @@ var (
 		EnvVar: local.MeterModelIDEnv,
 	}
 
-	ImprovedFirmwareFlag = cli.BoolFlag{
-		Name:   "improved_firmware",
-		Usage:  "if your eagle has the improved firmware (it responds with valid xml for multiplier & divisor queries) this should be set",
+	//oddity of the cli parsing library.  a boolt will be set to true by default, so 'setting' this turns it off, giving a mismatch between the name and
+	//the cli ergonomics
+	ImprovedFirmwareFlag = cli.BoolTFlag{
+		Name:   "unimproved_firmware",
+		Usage:  "if your eagle has the unimproved firmware (it responds with invalid xml for multiplier & divisor queries) this should be set",
 		EnvVar: local.ImprovedFirmwareEnv,
 	}
 
