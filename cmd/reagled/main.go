@@ -144,3 +144,22 @@ func setSignalCancel(ctx context.Context, sig ...os.Signal) context.Context {
 
 	return ctx
 }
+
+func getMeterAddress(ctx context.Context, api local.API) (string, error) {
+	devices, err := api.DeviceList(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	search := "smart_meter"
+	var models []string
+	for _, device := range devices {
+		if device.ModelID == search {
+			return device.HardwareAddress, nil
+		}
+
+		models = append(models, device.ModelID)
+	}
+
+	return "", fmt.Errorf("no %v found in device list: %v", search, models)
+}
