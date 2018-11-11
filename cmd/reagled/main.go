@@ -47,12 +47,19 @@ var (
 		EnvVar: local.MeterModelIDEnv,
 	}
 
+	ImprovedFirmwareFlag = cli.BoolFlag{
+		Name:   "improved_firmware",
+		Usage:  "if your eagle has the improved firmware (it responds with valid xml for multiplier & divisor queries) this should be set",
+		EnvVar: local.ImprovedFirmwareEnv,
+	}
+
 	flags = []cli.Flag{
 		AddressFlag,
 		LocationFlag,
 		UserFlag,
 		PasswordFlag,
 		ModelIDFlag,
+		ImprovedFirmwareFlag,
 	}
 )
 
