@@ -40,7 +40,7 @@ func TestConfigOrSkip(t testing.TB) Config {
 //ConfigFromEnv returns a Config and true using the environment variables or a Config and false if any aren't set
 func ConfigFromEnv() (Config, bool) {
 	//unless affirmatively set assume that they have a firmware with the bug around variables
-	improved := strings.ToLower(strings.TrimSpace(os.Getenv(ImprovedFirmwareEnv))) == "yes"
+	improved := strings.ToLower(strings.TrimSpace(os.Getenv(ImprovedFirmwareEnv))) == "true"
 
 	filter := BadResponseVariables
 	if improved {
