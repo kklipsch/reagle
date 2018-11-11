@@ -22,6 +22,9 @@ const (
 
 	//ImprovedFirmwareEnv set to yes if your firmware responds with well formed queries to multiplier and divisor queries, set to no if not
 	ImprovedFirmwareEnv string = "REAGLE_IMPROVED_FIRMWARE"
+
+	//MeterModelIDEnv is the name of the 'model_id' returned by the device for the smart meter being watched.  defaults to 'electric_meter' if not set
+	MeterModelIDEnv string = "REAGLE_MODEL_ID_NAME"
 )
 
 //TestConfigOrSkip returns teh Config from the environment variables or skips if any aren't set
@@ -52,6 +55,8 @@ func ConfigFromEnv() (Config, bool) {
 		ImprovedFirmware: improved,
 
 		Filter: filter,
+
+		ModelIDForMeter: strings.TrimSpace(os.Getenv(MeterModelIDEnv)),
 
 		DebugRequest:  strings.TrimSpace(os.Getenv(DebugRequestEnv)) != "",
 		DebugResponse: strings.TrimSpace(os.Getenv(DebugResponseEnv)) != "",
@@ -93,6 +98,17 @@ type Config struct {
 	DebugResponse bool
 
 	Filter VariableFilter
+
+	//what the eagle returns for the model id of the smart meter to watch.  defaults to electric_meter
+	ModelIDForMeter string
+}
+
+func (c Config) GetModelIDForMeter() string {
+	if c.ModelIDForMeter == "" {
+		return "electric_meter"
+	}
+
+	return c.ModelIDForMeter
 }
 
 func (c Config) GetFilter() VariableFilter {

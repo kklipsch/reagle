@@ -22,6 +22,26 @@ type API struct {
 	Config Config
 }
 
+//GetMeterHardwareAddress returns the hardware address of the smart meter, using the name provided in the config
+func (a API) GetMeterHardwareAddress(ctx context.Context) (string, error) {
+	devices, err := a.DeviceList(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	search := a.Config.GetModelIDForMeter()
+	var models []string
+	for _, device := range devices {
+		if device.ModelID == search {
+			return device.HardwareAddress, nil
+		}
+
+		models = append(models, device.ModelID)
+	}
+
+	return "", fmt.Errorf("no %v found in device list: %v", search, models)
+}
+
 //DeviceDetails returns the available variables
 func (a API) DeviceDetails(ctx context.Context, hardwareAddress string) (DeviceDetailsResponse, error) {
 	deviceResponse := DeviceDetailsResponse{}

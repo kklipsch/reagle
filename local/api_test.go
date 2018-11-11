@@ -61,11 +61,11 @@ func TestDeviceQuery(t *testing.T) {
 	ctx := context.Background()
 	api := New(config)
 
-	items, err := api.DeviceList(ctx)
+	address, err := api.GetMeterHardwareAddress(ctx)
 	require.NoError(t, err)
-	require.True(t, len(items) > 0)
+	require.NotEmpty(t, address)
 
-	resp, err := api.DeviceQuery(ctx, items[0].HardwareAddress, "zigbee:InstantaneousDemand", "zigbee:Message")
+	resp, err := api.DeviceQuery(ctx, address, "zigbee:InstantaneousDemand", "zigbee:Message")
 	require.NoError(t, err)
 	require.True(t, len(resp.Components.Component) > 0, fmt.Sprintf("%v", resp))
 	require.True(t, len(resp.Components.Component[0].Variables.Variable) > 0, fmt.Sprintf("%v", resp))
@@ -77,11 +77,11 @@ func TestDeviceDetails(t *testing.T) {
 	ctx := context.Background()
 	api := New(config)
 
-	items, err := api.DeviceList(ctx)
+	address, err := api.GetMeterHardwareAddress(ctx)
 	require.NoError(t, err)
-	require.True(t, len(items) > 0)
+	require.NotEmpty(t, address)
 
-	resp, err := api.DeviceDetails(ctx, items[0].HardwareAddress)
+	resp, err := api.DeviceDetails(ctx, address)
 	require.NoError(t, err)
 	require.True(t, len(resp.Components.Component) > 0, fmt.Sprintf("%v", resp))
 	require.True(t, len(resp.Components.Component[0].Variables.Variable) > 0, fmt.Sprintf("%v", resp))
@@ -96,11 +96,10 @@ func TestVariables(t *testing.T) {
 	ctx := context.Background()
 	api := New(config)
 
-	items, err := api.DeviceList(ctx)
+	hardwareAddress, err := api.GetMeterHardwareAddress(ctx)
 	require.NoError(t, err)
-	require.True(t, len(items) > 0)
+	require.NotEmpty(t, hardwareAddress)
 
-	hardwareAddress := items[0].HardwareAddress
 	resp, err := api.DeviceDetails(ctx, hardwareAddress)
 	require.NoError(t, err)
 

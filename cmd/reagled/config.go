@@ -18,8 +18,9 @@ func configure(ctx context.Context, cliCtx *cli.Context) (Config, error) {
 	}
 
 	localCfg := local.Config{
-		Location: cliCtx.String(LocationFlag.Name),
-		User:     cliCtx.String(UserFlag.Name),
+		Location:        cliCtx.String(LocationFlag.Name),
+		User:            cliCtx.String(UserFlag.Name),
+		ModelIDForMeter: cliCtx.String(ModelIDFlag.Name),
 	}
 
 	cfg.LocalConfig = local.SetPassword(localCfg, cliCtx.String(PasswordFlag.Name))

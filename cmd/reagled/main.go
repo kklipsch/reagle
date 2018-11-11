@@ -41,11 +41,18 @@ var (
 		EnvVar: local.PasswordEnv,
 	}
 
+	ModelIDFlag = cli.StringFlag{
+		Name:   "model_id",
+		Usage:  "what the eagle is reporting for your smart meter model id, can be found by hitting the device_list endpoint. Unlikely to need to be set",
+		EnvVar: local.MeterModelIDEnv,
+	}
+
 	flags = []cli.Flag{
 		AddressFlag,
 		LocationFlag,
 		UserFlag,
 		PasswordFlag,
+		ModelIDFlag,
 	}
 )
 
@@ -89,7 +96,7 @@ func start(cliCtx *cli.Context) error {
 		return cli.NewExitError(err, 3)
 	}
 
-	hardwareAddress, err := getMeterAddress(ctx, localAPI)
+	hardwareAddress, err := localAPI.GetMeterHardwareAddress(ctx)
 	if err != nil {
 		applicationLogger.WithFields(log.Fields{"error": err}).Errorln("error getting hardware address")
 	}
@@ -143,23 +150,4 @@ func setSignalCancel(ctx context.Context, sig ...os.Signal) context.Context {
 	}()
 
 	return ctx
-}
-
-func getMeterAddress(ctx context.Context, api local.API) (string, error) {
-	devices, err := api.DeviceList(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	search := "smart_meter"
-	var models []string
-	for _, device := range devices {
-		if device.ModelID == search {
-			return device.HardwareAddress, nil
-		}
-
-		models = append(models, device.ModelID)
-	}
-
-	return "", fmt.Errorf("no %v found in device list: %v", search, models)
 }
