@@ -23,6 +23,13 @@ var (
 		Value:  ":9000",
 	}
 
+	MetricScheduleFlag = cli.DurationFlag{
+		Name:   "metric_schedule",
+		Usage:  "how often to query the eagle for metric bridge",
+		EnvVar: "REAGLED_METRIC_SCHEDULE",
+		Value:  "1m",
+	}
+
 	LocationFlag = cli.StringFlag{
 		Name:   "location",
 		Usage:  "eagle address",
@@ -69,6 +76,7 @@ var (
 
 	flags = []cli.Flag{
 		AddressFlag,
+		MetricScheduleFlag,
 		LocationFlag,
 		UserFlag,
 		PasswordFlag,

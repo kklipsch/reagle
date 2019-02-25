@@ -2,19 +2,22 @@ package main
 
 import (
 	"context"
+	"time"
 
 	"github.com/kklipsch/reagle/local"
 	cli "gopkg.in/urfave/cli.v1"
 )
 
 type Config struct {
-	Address     string `json:"address"`
-	LocalConfig local.Config
+	Address        string        `json:"address"`
+	MetricSchedule time.Duration `json:"metric_schedule"`
+	LocalConfig    local.Config
 }
 
 func configure(ctx context.Context, cliCtx *cli.Context) (Config, error) {
 	cfg := Config{
-		Address: cliCtx.String(AddressFlag.Name),
+		Address:        cliCtx.String(AddressFlag.Name),
+		MetricSchedule: cliCtx.Duration(MetricScheduleFlag.Name),
 	}
 
 	localCfg := local.Config{
