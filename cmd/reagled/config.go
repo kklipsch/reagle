@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	Address     string
+	Address     string `json:"address"`
 	LocalConfig local.Config
 }
 
