@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/kklipsch/reagle/local"
@@ -16,9 +18,34 @@ func endpoint(cfg Config, hardwareAddress string, localAPI local.API, fatals cha
 	router.Handler("GET", "/local/wifi", instrumentHandler("local_wifi", localWifiHandler(localAPI)))
 	router.Handler("GET", "/local/devicelist", instrumentHandler("local_devicelist", localDeviceListHandler(localAPI)))
 	router.Handler("GET", "/local/meter", instrumentHandler("local_meter", localMeterHandler(hardwareAddress, localAPI)))
+	router.Handler("GET", "/local/variable/:variable", instrumentHandler("variable", localVariableHandler(hardwareAddress, localAPI)))
 
 	err := http.ListenAndServe(cfg.Address, router)
 	fatals <- err
+}
+
+func localVariableHandler(address string, api local.API) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ps := httprouter.ParamsFromContext(r.Context())
+		if ps == nil {
+			writeError(w, fmt.Errorf("no params in context"), http.StatusInternalServerError)
+			return
+		}
+
+		variable := strings.ToLower(strings.TrimSpace(ps.ByName("variable")))
+		if variable == "" {
+			writeError(w, fmt.Errorf("empty variable"), http.StatusInternalServerError)
+			return
+		}
+
+		details, err := api.DeviceQuery(r.Context(), address, variable)
+		if err != nil {
+			writeError(w, err, http.StatusInternalServerError)
+			return
+		}
+
+		jsonResponse(w, details)
+	}
 }
 
 func localMeterHandler(address string, api local.API) http.HandlerFunc {
