@@ -87,20 +87,20 @@ func SetPassword(c Config, password string) Config {
 
 //Config is used to locate/auth the eagle local api
 type Config struct {
-	Location string
-	User     string
-	password string
+	Location string `json:"location"`
+	User     string `json:"user"`
+	password string `json:"-"`
 
 	//Older versions of the firmware respond with invalid xml for multiplier/divisor
-	ImprovedFirmware bool
+	ImprovedFirmware bool `json:"improved_firmware"`
 
-	DebugRequest  bool
-	DebugResponse bool
+	DebugRequest  bool `json:"debug_request"`
+	DebugResponse bool `json:"debug_response"`
 
-	Filter VariableFilter
+	Filter VariableFilter `json:"variable_filter"`
 
 	//what the eagle returns for the model id of the smart meter to watch.  defaults to electric_meter
-	ModelIDForMeter string
+	ModelIDForMeter string `json:"model_id"`
 }
 
 func (c Config) GetModelIDForMeter() string {
