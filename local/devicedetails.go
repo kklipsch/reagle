@@ -21,6 +21,7 @@ func NewDeviceDetailsCommand(hardwareAddress string) DeviceDetailsCommand {
 	}
 }
 
+//VariablesFromDetailsResponse unwraps a DeviceDetailsResponse to get the list of Variable names
 func VariablesFromDetailsResponse(response DeviceDetailsResponse) []string {
 	var variables []string
 	for _, component := range response.Components.Component {
