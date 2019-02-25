@@ -89,7 +89,7 @@ func SetPassword(c Config, password string) Config {
 type Config struct {
 	Location string `json:"location"`
 	User     string `json:"user"`
-	password string `json:"-"`
+	password string
 
 	//Older versions of the firmware respond with invalid xml for multiplier/divisor
 	ImprovedFirmware bool `json:"improved_firmware"`
