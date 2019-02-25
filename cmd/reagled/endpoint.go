@@ -19,9 +19,34 @@ func endpoint(cfg Config, hardwareAddress string, localAPI local.API, fatals cha
 	router.Handler("GET", "/local/devicelist", instrumentHandler("local_devicelist", localDeviceListHandler(localAPI)))
 	router.Handler("GET", "/local/meter", instrumentHandler("local_meter", localMeterHandler(hardwareAddress, localAPI)))
 	router.Handler("GET", "/local/variable/:variable", instrumentHandler("variable", localVariableHandler(hardwareAddress, localAPI)))
+	router.Handler("GET", "/local/variable/", instrumentHandler("variable", localAllVariablesHandler(hardwareAddress, localAPI)))
 
 	err := http.ListenAndServe(cfg.Address, router)
 	fatals <- err
+}
+
+func localAllVariablesHandler(address string, api local.API) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		details, err := api.DeviceDetails(r.Context(), address)
+		if err != nil {
+			writeError(w, err, http.StatusInternalServerError)
+			return
+		}
+
+		variables := local.VariablesFromDetailsResponse(details)
+		if len(variables) < 1 {
+			writeError(w, fmt.Errorf("no variables defined"), http.StatusInternalServerError)
+			return
+		}
+
+		results, err := api.DeviceQuery(r.Context(), address, variables...)
+		if err != nil {
+			writeError(w, err, http.StatusInternalServerError)
+			return
+		}
+
+		jsonResponse(w, results)
+	}
 }
 
 func localVariableHandler(address string, api local.API) http.HandlerFunc {

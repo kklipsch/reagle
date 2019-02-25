@@ -20,3 +20,14 @@ func NewDeviceDetailsCommand(hardwareAddress string) DeviceDetailsCommand {
 		DeviceDetails: DeviceDetails{DeviceData: DeviceData{HardwareAddress: hardwareAddress}},
 	}
 }
+
+func VariablesFromDetailsResponse(response DeviceDetailsResponse) []string {
+	var variables []string
+	for _, component := range response.Components.Component {
+		for _, variable := range component.Variables.Variable {
+			variables = append(variables, variable)
+		}
+	}
+
+	return variables
+}
