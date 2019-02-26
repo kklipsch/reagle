@@ -12,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func endpoint(cfg Config, hardwareAddress string, localAPI local.API, fatals chan<- error) {
+func endpoint(cfg Config, hardwareAddress string, localAPI local.API) http.Handler {
 	router := httprouter.New()
 	router.Handler("GET", "/metrics", instrumentHandler("metrics", promhttp.Handler()))
 	router.Handler("GET", "/local/wifi", instrumentHandler("local_wifi", localWifiHandler(localAPI)))
@@ -21,8 +21,7 @@ func endpoint(cfg Config, hardwareAddress string, localAPI local.API, fatals cha
 	router.Handler("GET", "/local/variable/:variable", instrumentHandler("variable", localVariableHandler(hardwareAddress, localAPI)))
 	router.Handler("GET", "/local/variable/", instrumentHandler("variable", localAllVariablesHandler(hardwareAddress, localAPI)))
 
-	err := http.ListenAndServe(cfg.Address, router)
-	fatals <- err
+	return router
 }
 
 func localAllVariablesHandler(address string, api local.API) http.HandlerFunc {

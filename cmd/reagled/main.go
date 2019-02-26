@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -120,45 +121,38 @@ func start(cliCtx *cli.Context) error {
 
 	applicationLogger.WithFields(log.Fields{"config": config}).Infoln("configured")
 
-	localAPI := local.New(config.LocalConfig)
-	localAPI.Client.Transport, err = instrumentClient("local", localAPI.Client.Transport)
-	if err != nil {
-		err = fmt.Errorf("error instrumenting local client: %v", err)
-		return cli.NewExitError(err, 3)
-	}
-
-	hardwareAddress, err := localAPI.GetMeterHardwareAddress(ctx)
+	hardwareAddress, err := getHardwareAddress(ctx, cfg.LocalConfig)
 	if err != nil {
 		applicationLogger.WithFields(log.Fields{"error": err}).Errorln("error getting hardware address")
 	}
 
-	errors := make(chan error, 1)
-	go endpoint(config, hardwareAddress, localAPI, errors)
-	go dataGatherer(ctx, config, errors)
+	handler := endpoint(config, hardwareAddress, localAPI)
 
-	err = nil
-	for errors != nil {
-		select {
-		case <-ctx.Done():
-			//this will cause the main data gatherer to stop and send a nil down the error channel
-			//if it doesn't this go routine will send an error down the error channel
-			go errorAfter(time.Second*5, errors)
-		case e := <-errors:
-			if e != nil {
-				err = e
-				cancel()
-			}
-
-			errors = nil
+	srv := &http.Server{Addr: config.Address, Handler: handler}
+	go func() {
+		err := srv.ListenAndServe()
+		if err != http.ErrServerClosed {
+			log.Fatal("failed at serving: %v", err)
 		}
-	}
+	}()
 
+	<-ctx.Done()
+	err := srv.Shutdown(context.WithTimeout(context.Background(), time.Second*5))
 	if err != nil {
-		return cli.NewExitError(err, 1)
+		return cli.NewExitError(err, 3)
 	}
 
 	applicationLogger.Infoln("done")
 	return nil
+}
+
+func getHardwareAddress(ctx context, cfg local.Config) (string, error) {
+	api, err := instrumentedAPIFactory(cfg)()
+	if err != nil {
+		return err
+	}
+
+	return api.GetMeterHardwareAddress(ctx)
 }
 
 func errorAfter(t time.Duration, errors chan error) {
