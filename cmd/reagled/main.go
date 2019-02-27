@@ -27,7 +27,7 @@ var (
 		Name:   "metric_schedule",
 		Usage:  "how often to query the eagle for metric bridge",
 		EnvVar: "REAGLED_METRIC_SCHEDULE",
-		Value:  "1m",
+		Value:  time.Minute,
 	}
 
 	LocationFlag = cli.StringFlag{
