@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -23,11 +24,11 @@ var (
 		Value:  ":9000",
 	}
 
-	MetricScheduleFlag = cli.DurationFlag{
-		Name:   "metric_schedule",
-		Usage:  "how often to query the eagle for metric bridge",
-		EnvVar: "REAGLED_METRIC_SCHEDULE",
-		Value:  time.Minute,
+	WaitFlag = cli.DurationFlag{
+		Name:   "wait",
+		Usage:  "how much time to ensure between calls to the eagle",
+		EnvVar: "REAGLED_WAIT",
+		Value:  time.Second,
 	}
 
 	LocationFlag = cli.StringFlag{
@@ -76,7 +77,7 @@ var (
 
 	flags = []cli.Flag{
 		AddressFlag,
-		MetricScheduleFlag,
+		WaitFlag,
 		LocationFlag,
 		UserFlag,
 		PasswordFlag,
@@ -108,64 +109,50 @@ func start(cliCtx *cli.Context) error {
 	applicationLogger.Infoln("starting up")
 
 	ctx := setSignalCancel(context.Background(), os.Interrupt, os.Kill, syscall.SIGTERM)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	config, err := configure(ctx, cliCtx)
 	if err != nil {
-		cancel()
 		err = fmt.Errorf("error configuring: %v", err)
 		return cli.NewExitError(err, 2)
 	}
 
 	applicationLogger.WithFields(log.Fields{"config": config}).Infoln("configured")
 
-	localAPI := local.New(config.LocalConfig)
-	localAPI.Client.Transport, err = instrumentClient("local", localAPI.Client.Transport)
+	mediator, err := startAPIMediator(ctx, config)
 	if err != nil {
-		err = fmt.Errorf("error instrumenting local client: %v", err)
+		err = fmt.Errorf("error starting api mediator: %v", err)
 		return cli.NewExitError(err, 3)
 	}
 
-	hardwareAddress, err := localAPI.GetMeterHardwareAddress(ctx)
+	srv := startServer(config, mediator)
+
+	applicationLogger.Infoln("started")
+
+	<-ctx.Done()
+
+	shutdownCtx, clean := context.WithTimeout(context.Background(), time.Second*5)
+	defer clean()
+
+	err = srv.Shutdown(shutdownCtx)
 	if err != nil {
-		applicationLogger.WithFields(log.Fields{"error": err}).Errorln("error getting hardware address")
-	}
-
-	errors := make(chan error, 1)
-	go endpoint(config, hardwareAddress, localAPI, errors)
-	go dataGatherer(ctx, config, errors)
-
-	err = nil
-	for errors != nil {
-		select {
-		case <-ctx.Done():
-			//this will cause the main data gatherer to stop and send a nil down the error channel
-			//if it doesn't this go routine will send an error down the error channel
-			go errorAfter(time.Second*5, errors)
-		case e := <-errors:
-			if e != nil {
-				err = e
-				cancel()
-			}
-
-			errors = nil
-		}
-	}
-
-	if err != nil {
-		return cli.NewExitError(err, 1)
+		err = fmt.Errorf("error shutting down web server: %v", err)
+		return cli.NewExitError(err, 4)
 	}
 
 	applicationLogger.Infoln("done")
 	return nil
 }
 
-func errorAfter(t time.Duration, errors chan error) {
-	timeout, cleanup := context.WithTimeout(context.Background(), t)
-	defer cleanup()
-	<-timeout.Done()
-	errors <- fmt.Errorf("program did not stop within %v of context finish", t)
+func startServer(config Config, mediator apiMediator) *http.Server {
+	srv := &http.Server{Addr: config.Address, Handler: endpoint(mediator)}
+	go func() {
+		err := srv.ListenAndServe()
+		if err != http.ErrServerClosed {
+			applicationLogger.WithFields(log.Fields{"err": err}).Fatalln("failed at serving")
+		}
+	}()
+
+	return srv
 }
 
 func setSignalCancel(ctx context.Context, sig ...os.Signal) context.Context {

@@ -32,3 +32,16 @@ func VariablesFromDetailsResponse(response DeviceDetailsResponse) []string {
 
 	return variables
 }
+
+//ResultsFromDetailsResponse returns a map of component name -> variable name -> Variable
+func ResultsFromDetailsResponse(response DeviceQueryResponse) map[string]map[string]Variable {
+	variables := make(map[string]map[string]Variable)
+	for _, component := range response.Components.Component {
+		variables[component.Name] = make(map[string]Variable)
+		for _, variable := range component.Variables.Variable {
+			variables[component.Name][variable.Name] = variable
+		}
+	}
+
+	return variables
+}
