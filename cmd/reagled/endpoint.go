@@ -21,6 +21,7 @@ func endpoint(mediator apiMediator) http.Handler {
 	router.Handler("GET", "/local/meter", instrumentHandler("local_meter", localMediated(mediator, meterDetails)))
 	router.Handler("GET", "/local/variable/:variable", instrumentHandler("variable", localMediated(mediator, specificVariable, getVariableFromURL)))
 	router.Handler("GET", "/local/variable/", instrumentHandler("variable", localMediated(mediator, allVariables)))
+	router.Handler("GET", "/local/metrics/", instrumentHandler("variable", localMediated(mediator, baseMetrics)))
 
 	return router
 }
