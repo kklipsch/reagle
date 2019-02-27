@@ -106,6 +106,13 @@ func main() {
 	}
 }
 
+const (
+	configureErrorCode int = iota
+	mediatorErrorCode
+	bridgeErrorCode
+	shutdownErrorCode
+)
+
 func start(cliCtx *cli.Context) error {
 	applicationLogger.Infoln("starting up")
 
@@ -114,7 +121,7 @@ func start(cliCtx *cli.Context) error {
 	config, err := configure(ctx, cliCtx)
 	if err != nil {
 		err = fmt.Errorf("error configuring: %v", err)
-		return cli.NewExitError(err, 2)
+		return cli.NewExitError(err, configureErrorCode)
 	}
 
 	applicationLogger.WithFields(log.Fields{"config": config}).Infoln("configured")
@@ -122,13 +129,13 @@ func start(cliCtx *cli.Context) error {
 	mediator, err := startAPIMediator(ctx, config)
 	if err != nil {
 		err = fmt.Errorf("error starting api mediator: %v", err)
-		return cli.NewExitError(err, 3)
+		return cli.NewExitError(err, mediatorErrorCode)
 	}
 
 	_, err = newPrometheusBridge(ctx, prometheus.DefaultRegisterer, mediator)
 	if err != nil {
 		err = fmt.Errorf("error creating prometheus bridge: %v", err)
-		return cli.NewExitError(err, 4)
+		return cli.NewExitError(err, bridgeErrorCode)
 	}
 
 	srv := startServer(config, mediator)
@@ -143,7 +150,7 @@ func start(cliCtx *cli.Context) error {
 	err = srv.Shutdown(shutdownCtx)
 	if err != nil {
 		err = fmt.Errorf("error shutting down web server: %v", err)
-		return cli.NewExitError(err, 5)
+		return cli.NewExitError(err, shutdownErrorCode)
 	}
 
 	applicationLogger.Infoln("done")
