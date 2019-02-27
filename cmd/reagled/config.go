@@ -9,15 +9,15 @@ import (
 )
 
 type Config struct {
-	Address        string        `json:"address"`
-	MetricSchedule time.Duration `json:"metric_schedule"`
-	LocalConfig    local.Config
+	Address     string        `json:"address"`
+	Wait        time.Duration `json:"wait"`
+	LocalConfig local.Config
 }
 
 func configure(ctx context.Context, cliCtx *cli.Context) (Config, error) {
 	cfg := Config{
-		Address:        cliCtx.String(AddressFlag.Name),
-		MetricSchedule: cliCtx.Duration(MetricScheduleFlag.Name),
+		Address: cliCtx.String(AddressFlag.Name),
+		Wait:    cliCtx.Duration(WaitFlag.Name),
 	}
 
 	localCfg := local.Config{

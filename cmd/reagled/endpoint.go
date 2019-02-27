@@ -7,106 +7,64 @@ import (
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/kklipsch/reagle/local"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 )
 
-func endpoint(cfg Config, hardwareAddress string, localAPI local.API) http.Handler {
+func endpoint(mediator apiMediator) http.Handler {
 	router := httprouter.New()
 	router.Handler("GET", "/metrics", instrumentHandler("metrics", promhttp.Handler()))
-	router.Handler("GET", "/local/wifi", instrumentHandler("local_wifi", localWifiHandler(localAPI)))
-	router.Handler("GET", "/local/devicelist", instrumentHandler("local_devicelist", localDeviceListHandler(localAPI)))
-	router.Handler("GET", "/local/meter", instrumentHandler("local_meter", localMeterHandler(hardwareAddress, localAPI)))
-	router.Handler("GET", "/local/variable/:variable", instrumentHandler("variable", localVariableHandler(hardwareAddress, localAPI)))
-	router.Handler("GET", "/local/variable/", instrumentHandler("variable", localAllVariablesHandler(hardwareAddress, localAPI)))
+	router.Handler("GET", "/local/wifi", instrumentHandler("local_wifi", localMediated(mediator, wifiStatus)))
+	router.Handler("GET", "/local/devicelist", instrumentHandler("local_devicelist", localMediated(mediator, deviceList)))
+	router.Handler("GET", "/local/meter", instrumentHandler("local_meter", localMediated(mediator, meterDetails)))
+	router.Handler("GET", "/local/variable/:variable", instrumentHandler("variable", localMediated(mediator, specificVariable, getVariableFromURL)))
+	router.Handler("GET", "/local/variable/", instrumentHandler("variable", localMediated(mediator, allVariables)))
 
 	return router
 }
 
-func localAllVariablesHandler(address string, api local.API) http.HandlerFunc {
+type variableFromRequest func(r *http.Request) (string, error)
+
+func localMediated(mediator apiMediator, typ requestType, getVariable ...variableFromRequest) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		details, err := api.DeviceDetails(r.Context(), address)
+		var err error
+
+		variable := ""
+		if len(getVariable) > 0 {
+			variable, err = getVariable[0](r)
+			if err != nil {
+				writeError(w, fmt.Errorf("unable to get variable: %v", err), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		response, err := mediator.sendReceive(r.Context(), newAPIRequest(typ, variable))
+		if err != nil && err == errRateLimited {
+			writeError(w, err, http.StatusServiceUnavailable)
+			return
+		}
+
 		if err != nil {
 			writeError(w, err, http.StatusInternalServerError)
 			return
 		}
 
-		variables := local.VariablesFromDetailsResponse(details)
-		if len(variables) < 1 {
-			writeError(w, fmt.Errorf("no variables defined"), http.StatusInternalServerError)
-			return
-		}
-
-		results, err := api.DeviceQuery(r.Context(), address, variables...)
-		if err != nil {
-			writeError(w, err, http.StatusInternalServerError)
-			return
-		}
-
-		jsonResponse(w, results)
+		jsonResponse(w, response)
 	}
 }
 
-func localVariableHandler(address string, api local.API) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ps := httprouter.ParamsFromContext(r.Context())
-		if ps == nil {
-			writeError(w, fmt.Errorf("no params in context"), http.StatusInternalServerError)
-			return
-		}
-
-		variable := strings.ToLower(strings.TrimSpace(ps.ByName("variable")))
-		if variable == "" {
-			writeError(w, fmt.Errorf("empty variable"), http.StatusInternalServerError)
-			return
-		}
-
-		details, err := api.DeviceQuery(r.Context(), address, variable)
-		if err != nil {
-			writeError(w, err, http.StatusInternalServerError)
-			return
-		}
-
-		jsonResponse(w, details)
-	}
-}
-
-func localMeterHandler(address string, api local.API) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		details, err := api.DeviceDetails(r.Context(), address)
-		if err != nil {
-			writeError(w, err, http.StatusInternalServerError)
-			return
-		}
-
-		jsonResponse(w, details)
-	}
-}
-
-func localDeviceListHandler(api local.API) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		dl, err := api.DeviceList(r.Context())
-		if err != nil {
-			writeError(w, err, http.StatusInternalServerError)
-			return
-		}
-
-		jsonResponse(w, dl)
+func getVariableFromURL(r *http.Request) (string, error) {
+	ps := httprouter.ParamsFromContext(r.Context())
+	if ps == nil {
+		return "", fmt.Errorf("no params in context")
 	}
 
-}
-
-func localWifiHandler(api local.API) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		wifi, err := api.WifiStatus(r.Context())
-		if err != nil {
-			writeError(w, err, http.StatusInternalServerError)
-			return
-		}
-
-		jsonResponse(w, wifi)
+	variable := strings.ToLower(strings.TrimSpace(ps.ByName("variable")))
+	if variable == "" {
+		return "", fmt.Errorf("empty variable")
 	}
+
+	return variable, nil
 }
 
 func jsonResponse(w http.ResponseWriter, response interface{}) {
