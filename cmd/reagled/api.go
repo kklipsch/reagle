@@ -33,7 +33,7 @@ const (
 	meterDetails
 	deviceList
 	wifiStatus
-	prometheusVariables
+	baseMetrics
 )
 
 var errRateLimited = fmt.Errorf("rate limited")
@@ -94,6 +94,11 @@ func handleAPICalls(ctx context.Context, wait time.Duration, localAPI local.API,
 }
 
 func handleRequest(ctx context.Context, hardwareAddress string, localapi local.API, req apiRequest) (interface{}, error) {
+	err := validateHardwareAddress(req.typ, hardwareAddress)
+	if err != nil {
+		return nil, err
+	}
+
 	switch req.typ {
 	case specificVariable:
 		return localapi.DeviceQuery(ctx, hardwareAddress, req.variable)
@@ -111,10 +116,28 @@ func handleRequest(ctx context.Context, hardwareAddress string, localapi local.A
 		return localapi.DeviceQuery(ctx, hardwareAddress, variables...)
 	case meterDetails:
 		return localapi.DeviceDetails(ctx, hardwareAddress)
-	case wifiStatus:
+	case baseMetrics:
+		return getMetricValues(ctx, localapi, hardwareAddress)
+	case deviceList:
 		return localapi.DeviceList(ctx)
+	case wifiStatus:
+		return localapi.WifiStatus(ctx)
 	default:
 		return nil, fmt.Errorf("unknown request type: %v", req.typ)
+	}
+
+}
+
+func validateHardwareAddress(typ requestType, address string) error {
+	if address != "" {
+		return nil
+	}
+
+	switch typ {
+	case wifiStatus, deviceList:
+		return nil
+	default:
+		return fmt.Errorf("%v:must have hardware address for that query", typ)
 	}
 
 }

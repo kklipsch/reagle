@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/kklipsch/reagle/local"
+	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	cli "gopkg.in/urfave/cli.v1"
 )
@@ -124,6 +125,12 @@ func start(cliCtx *cli.Context) error {
 		return cli.NewExitError(err, 3)
 	}
 
+	_, err = newPrometheusBridge(ctx, prometheus.DefaultRegisterer, mediator)
+	if err != nil {
+		err = fmt.Errorf("error creating prometheus bridge: %v", err)
+		return cli.NewExitError(err, 4)
+	}
+
 	srv := startServer(config, mediator)
 
 	applicationLogger.Infoln("started")
@@ -136,7 +143,7 @@ func start(cliCtx *cli.Context) error {
 	err = srv.Shutdown(shutdownCtx)
 	if err != nil {
 		err = fmt.Errorf("error shutting down web server: %v", err)
-		return cli.NewExitError(err, 4)
+		return cli.NewExitError(err, 5)
 	}
 
 	applicationLogger.Infoln("done")
