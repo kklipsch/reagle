@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -38,18 +40,21 @@ func localMediated(mediator apiMediator, typ requestType, getVariable ...variabl
 			}
 		}
 
+		timeout, clean := context.WithTimeout(r.Context(), time.Second*5)
+		defer clean()
+		r = r.WithContext(timeout)
+
 		response, err := mediator.sendReceive(r.Context(), newAPIRequest(typ, variable))
-		if err != nil && err == errRateLimited {
+		switch err {
+		case nil:
+			jsonResponse(w, response)
+		case errRateLimited:
 			writeError(w, err, http.StatusServiceUnavailable)
-			return
-		}
-
-		if err != nil {
+		case context.DeadlineExceeded:
+			writeError(w, err, http.StatusServiceUnavailable)
+		default:
 			writeError(w, err, http.StatusInternalServerError)
-			return
 		}
-
-		jsonResponse(w, response)
 	}
 }
 
