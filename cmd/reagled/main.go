@@ -18,39 +18,39 @@ import (
 var (
 	applicationLogger = log.WithFields(log.Fields{"name": "reagled"})
 
-	AddressFlag = cli.StringFlag{
+	addressFlag = cli.StringFlag{
 		Name:   "address",
 		Usage:  "where to serve the endpoints",
 		EnvVar: "REAGLED_ADDRESS",
 		Value:  ":9000",
 	}
 
-	WaitFlag = cli.DurationFlag{
+	waitFlag = cli.DurationFlag{
 		Name:   "wait",
 		Usage:  "how much time to ensure between calls to the eagle",
 		EnvVar: "REAGLED_WAIT",
 		Value:  time.Second,
 	}
 
-	LocationFlag = cli.StringFlag{
+	locationFlag = cli.StringFlag{
 		Name:   "location",
 		Usage:  "eagle address",
 		EnvVar: local.LocationEnv,
 	}
 
-	UserFlag = cli.StringFlag{
+	userFlag = cli.StringFlag{
 		Name:   "user",
 		Usage:  "eagle user",
 		EnvVar: local.UserEnv,
 	}
 
-	PasswordFlag = cli.StringFlag{
+	passwordFlag = cli.StringFlag{
 		Name:   "password",
 		Usage:  "eagle password",
 		EnvVar: local.PasswordEnv,
 	}
 
-	ModelIDFlag = cli.StringFlag{
+	modelIDFlag = cli.StringFlag{
 		Name:   "model_id",
 		Usage:  "what the eagle is reporting for your smart meter model id, can be found by hitting the device_list endpoint. Unlikely to need to be set",
 		EnvVar: local.MeterModelIDEnv,
@@ -58,34 +58,34 @@ var (
 
 	//oddity of the cli parsing library.  a boolt will be set to true by default, so 'setting' this turns it off, giving a mismatch between the name and
 	//the cli ergonomics
-	ImprovedFirmwareFlag = cli.BoolTFlag{
+	improvedFirmwareFlag = cli.BoolTFlag{
 		Name:   "unimproved_firmware",
 		Usage:  "if your eagle has the unimproved firmware (it responds with invalid xml for multiplier & divisor queries) this should be set",
 		EnvVar: local.ImprovedFirmwareEnv,
 	}
 
-	DebugRequestFlag = cli.BoolFlag{
+	debugRequestFlag = cli.BoolFlag{
 		Name:   "debug_request",
 		Usage:  "if set requests will be debugged",
 		EnvVar: local.DebugRequestEnv,
 	}
 
-	DebugResponseFlag = cli.BoolFlag{
+	debugResponseFlag = cli.BoolFlag{
 		Name:   "debug_response",
 		Usage:  "if set responses will be debugged",
 		EnvVar: local.DebugResponseEnv,
 	}
 
 	flags = []cli.Flag{
-		AddressFlag,
-		WaitFlag,
-		LocationFlag,
-		UserFlag,
-		PasswordFlag,
-		ModelIDFlag,
-		ImprovedFirmwareFlag,
-		DebugRequestFlag,
-		DebugResponseFlag,
+		addressFlag,
+		waitFlag,
+		locationFlag,
+		userFlag,
+		passwordFlag,
+		modelIDFlag,
+		improvedFirmwareFlag,
+		debugRequestFlag,
+		debugResponseFlag,
 	}
 )
 

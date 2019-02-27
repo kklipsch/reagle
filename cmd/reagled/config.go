@@ -16,20 +16,20 @@ type Config struct {
 
 func configure(ctx context.Context, cliCtx *cli.Context) (Config, error) {
 	cfg := Config{
-		Address: cliCtx.String(AddressFlag.Name),
-		Wait:    cliCtx.Duration(WaitFlag.Name),
+		Address: cliCtx.String(addressFlag.Name),
+		Wait:    cliCtx.Duration(waitFlag.Name),
 	}
 
 	localCfg := local.Config{
-		Location:         cliCtx.String(LocationFlag.Name),
-		User:             cliCtx.String(UserFlag.Name),
-		ModelIDForMeter:  cliCtx.String(ModelIDFlag.Name),
-		ImprovedFirmware: cliCtx.Bool(ImprovedFirmwareFlag.Name),
-		DebugRequest:     cliCtx.Bool(DebugRequestFlag.Name),
-		DebugResponse:    cliCtx.Bool(DebugResponseFlag.Name),
+		Location:         cliCtx.String(locationFlag.Name),
+		User:             cliCtx.String(userFlag.Name),
+		ModelIDForMeter:  cliCtx.String(modelIDFlag.Name),
+		ImprovedFirmware: cliCtx.Bool(improvedFirmwareFlag.Name),
+		DebugRequest:     cliCtx.Bool(debugRequestFlag.Name),
+		DebugResponse:    cliCtx.Bool(debugResponseFlag.Name),
 	}
 
-	cfg.LocalConfig = local.SetPassword(localCfg, cliCtx.String(PasswordFlag.Name))
+	cfg.LocalConfig = local.SetPassword(localCfg, cliCtx.String(passwordFlag.Name))
 
 	err := local.ValidateConfig(cfg.LocalConfig)
 	return cfg, err
