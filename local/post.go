@@ -23,7 +23,7 @@ func PostCommand(ctx context.Context, client *http.Client, config Config, comman
 		resp        *http.Response
 	)
 
-	commandBody, err = xml.Marshal(command)
+	commandBody, err = xml.MarshalIndent(command, "  ", "   ")
 	if err != nil {
 		return
 	}
