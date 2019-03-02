@@ -72,20 +72,12 @@ func handleAPICalls(ctx context.Context, wait time.Duration, localAPI local.API,
 				return
 			}
 
-			if blocked.Get() {
-				sendResult(ctx, req.resultPromise, errRateLimited)
-				return
+			result, err := handleRequest(ctx, wait, blocked, hardwareAddress, localAPI, req)
+			if err == errRateLimited {
+				log.Info("request was load shed")
 			}
 
-			gateRequests(ctx, blocked, wait)
-
-			result, err := handleRequest(ctx, hardwareAddress, localAPI, req)
-			if err != nil {
-				sendResult(ctx, req.resultPromise, err)
-				return
-			}
-
-			sendResult(ctx, req.resultPromise, result)
+			sendResult(ctx, req.resultPromise, result, err)
 		case <-ctx.Done():
 			return
 		}
@@ -93,7 +85,17 @@ func handleAPICalls(ctx context.Context, wait time.Duration, localAPI local.API,
 
 }
 
-func handleRequest(ctx context.Context, hardwareAddress string, localapi local.API, req apiRequest) (interface{}, error) {
+func handleRequest(ctx context.Context, wait time.Duration, blocked atomicBool, hardwareAddress string, localapi local.API, req apiRequest) (interface{}, error) {
+	if blocked.Get() {
+		return nil, errRateLimited
+	}
+
+	gateRequests(ctx, blocked, wait)
+
+	return queryForRequest(ctx, hardwareAddress, localapi, req)
+}
+
+func queryForRequest(ctx context.Context, hardwareAddress string, localapi local.API, req apiRequest) (interface{}, error) {
 	err := validateHardwareAddress(req.typ, hardwareAddress)
 	if err != nil {
 		return nil, err
@@ -154,9 +156,14 @@ func gateRequests(ctx context.Context, blocked atomicBool, wait time.Duration) {
 	}()
 }
 
-func sendResult(ctx context.Context, resultPromise chan<- interface{}, result interface{}) {
+func sendResult(ctx context.Context, resultPromise chan<- interface{}, result interface{}, err error) {
+	toSend := result
+	if err != nil {
+		toSend = err
+	}
+
 	select {
-	case resultPromise <- result:
+	case resultPromise <- toSend:
 	case <-ctx.Done():
 	}
 }
