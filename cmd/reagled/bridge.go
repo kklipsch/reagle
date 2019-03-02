@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/kklipsch/reagle/client"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 )
@@ -26,18 +27,18 @@ type (
 		//caching previous to return in case of error
 		previousValues atomic.Value
 
-		//use the standard mediator that keeps things threadsafe and throttled
-		mediator apiMediator
+		//use the standard client that keeps things threadsafe and throttled
+		c client.Local
 	}
 )
 
-func newPrometheusBridge(ctx context.Context, reg prometheus.Registerer, mediator apiMediator) (*rainForestBridge, error) {
+func newPrometheusBridge(ctx context.Context, reg prometheus.Registerer, c client.Local) (*rainForestBridge, error) {
 	bridge := &rainForestBridge{
 		contextFactory: func() context.Context { return ctx },
-		mediator:       mediator,
+		c:              c,
 	}
 
-	bridge.previousValues.Store(metricValues{})
+	bridge.previousValues.Store(client.BaseMetrics{})
 
 	err := reg.Register(bridge)
 	return bridge, err
@@ -55,7 +56,7 @@ func (bridge *rainForestBridge) Collect(ch chan<- prometheus.Metric) {
 	timeout, clean := context.WithTimeout(ctx, time.Second*5)
 	defer clean()
 
-	response, err := bridge.mediator.sendReceive(timeout, newAPIRequest(baseMetrics, ""))
+	response, err := bridge.c.Request(timeout, client.RequestBaseMetrics())
 	if err != nil {
 		errorsCount.Inc()
 		applicationLogger.WithFields(log.Fields{"err": err}).Errorln("unable to get metrics for prometheus bridge")
@@ -67,8 +68,8 @@ func (bridge *rainForestBridge) Collect(ch chan<- prometheus.Metric) {
 }
 
 func collectValues(ctx context.Context, ch chan<- prometheus.Metric, response interface{}) {
-	//go ahead and panic cause if this isnt a metricvalues it means something disastorous has happened
-	values := response.(metricValues)
+	//go ahead and panic cause if this isnt a BaseMetrics it means something disastorous has happened
+	values := response.(client.BaseMetrics)
 
 	send(ctx, ch, prometheus.MustNewConstMetric(
 		instantDemand,
@@ -78,7 +79,7 @@ func collectValues(ctx context.Context, ch chan<- prometheus.Metric, response in
 
 	send(ctx, ch, prometheus.MustNewConstMetric(
 		currentDelivered,
-		prometheus.GaugeValue,
+		prometheus.CounterValue,
 		values.Delivered,
 	))
 

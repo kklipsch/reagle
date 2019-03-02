@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kklipsch/reagle/local"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -55,6 +56,13 @@ var (
 		[]string{"handler", "code", "method"},
 	)
 )
+
+func instrumentedAPI(cfg local.Config) (local.API, error) {
+	var err error
+	localAPI := local.New(cfg)
+	localAPI.Client.Transport, err = instrumentClient("local", localAPI.Client.Transport)
+	return localAPI, err
+}
 
 func instrumentHandler(handlerName string, h http.Handler) http.Handler {
 	return promhttp.InstrumentHandlerInFlight(requestsInFlightGauge,

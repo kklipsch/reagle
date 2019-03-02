@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"context"
@@ -8,17 +8,16 @@ import (
 	"github.com/kklipsch/reagle/local"
 )
 
-type (
-	metricValues struct {
-		Demand    float64 `json:"demand"`
-		Delivered float64 `json:"delivered"`
-		Price     float64 `json:"price"`
-		Currency  string  `json:"currency"`
-	}
-)
+//BaseMetrics are the most commonly used metrics on the smart meter
+type BaseMetrics struct {
+	Demand    float64 `json:"demand"`
+	Delivered float64 `json:"delivered"`
+	Price     float64 `json:"price"`
+	Currency  string  `json:"currency"`
+}
 
-func getMetricValues(ctx context.Context, localAPI local.API, hardwareAddress string) (metricValues, error) {
-	values := metricValues{}
+func getBaseMetrics(ctx context.Context, localAPI local.API, hardwareAddress string) (BaseMetrics, error) {
+	values := BaseMetrics{}
 
 	response, err := localAPI.DeviceQuery(ctx, hardwareAddress, "zigbee:InstantaneousDemand", "zigbee:CurrentSummationDelivered", "zigbee:Price", "zigbee:Currency")
 	if err != nil {

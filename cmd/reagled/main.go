@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/kklipsch/reagle/client"
 	"github.com/kklipsch/reagle/local"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
@@ -108,7 +109,7 @@ func main() {
 
 const (
 	configureErrorCode int = iota
-	mediatorErrorCode
+	apiErrorCode
 	bridgeErrorCode
 	shutdownErrorCode
 )
@@ -126,19 +127,21 @@ func start(cliCtx *cli.Context) error {
 
 	applicationLogger.WithFields(log.Fields{"config": config}).Infoln("configured")
 
-	mediator, err := startAPIMediator(ctx, config)
+	api, err := instrumentedAPI(config.LocalConfig)
 	if err != nil {
-		err = fmt.Errorf("error starting api mediator: %v", err)
-		return cli.NewExitError(err, mediatorErrorCode)
+		err = fmt.Errorf("error instrumenting api: %v", err)
+		return cli.NewExitError(err, apiErrorCode)
 	}
 
-	_, err = newPrometheusBridge(ctx, prometheus.DefaultRegisterer, mediator)
+	c := client.Get(ctx, api, config.Wait)
+
+	_, err = newPrometheusBridge(ctx, prometheus.DefaultRegisterer, c)
 	if err != nil {
 		err = fmt.Errorf("error creating prometheus bridge: %v", err)
 		return cli.NewExitError(err, bridgeErrorCode)
 	}
 
-	srv := startServer(config, mediator)
+	srv := startServer(config, c)
 
 	applicationLogger.Infoln("started")
 
@@ -157,8 +160,8 @@ func start(cliCtx *cli.Context) error {
 	return nil
 }
 
-func startServer(config Config, mediator apiMediator) *http.Server {
-	srv := &http.Server{Addr: config.Address, Handler: endpoint(mediator)}
+func startServer(config Config, c client.Local) *http.Server {
+	srv := &http.Server{Addr: config.Address, Handler: endpoint(c)}
 	go func() {
 		err := srv.ListenAndServe()
 		if err != http.ErrServerClosed {

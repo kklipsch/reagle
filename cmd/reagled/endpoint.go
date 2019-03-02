@@ -9,32 +9,42 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/kklipsch/reagle/client"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 )
 
-func endpoint(mediator apiMediator) http.Handler {
+func endpoint(c client.Local) http.Handler {
 	router := httprouter.New()
 	router.Handler("GET", "/metrics", instrumentHandler("metrics", promhttp.Handler()))
-	router.Handler("GET", "/local/wifi", instrumentHandler("local_wifi", localMediated(mediator, wifiStatus)))
-	router.Handler("GET", "/local/devicelist", instrumentHandler("local_devicelist", localMediated(mediator, deviceList)))
-	router.Handler("GET", "/local/meter", instrumentHandler("local_meter", localMediated(mediator, meterDetails)))
-	router.Handler("GET", "/local/variable/:variable", instrumentHandler("variable", localMediated(mediator, specificVariable, getVariableFromURL)))
-	router.Handler("GET", "/local/variable/", instrumentHandler("variable", localMediated(mediator, allVariables)))
-	router.Handler("GET", "/local/metrics/", instrumentHandler("variable", localMediated(mediator, baseMetrics)))
+	router.Handler("GET", "/local/wifi", instrumentHandler("local_wifi", clientHandler(c, wifiStatus)))
+	router.Handler("GET", "/local/devicelist", instrumentHandler("local_devicelist", clientHandler(c, deviceList)))
+	router.Handler("GET", "/local/meter", instrumentHandler("local_meter", clientHandler(c, meterDetails)))
+	router.Handler("GET", "/local/variable/:variable", instrumentHandler("variable", clientHandler(c, specificVariable, getVariableFromURL)))
+	router.Handler("GET", "/local/variable/", instrumentHandler("variable", clientHandler(c, allVariables)))
+	router.Handler("GET", "/local/metrics/", instrumentHandler("variable", clientHandler(c, baseMetrics)))
 
 	return router
 }
 
-type variableFromRequest func(r *http.Request) (string, error)
+func wifiStatus(_ interface{}) client.Request   { return client.RequestWifiStatus() }
+func deviceList(_ interface{}) client.Request   { return client.RequestDeviceList() }
+func meterDetails(_ interface{}) client.Request { return client.RequestMeterDetails() }
+func specificVariable(payload interface{}) client.Request {
+	return client.RequestSpecificVariable(payload.(string))
+}
+func allVariables(_ interface{}) client.Request { return client.RequestAllVariables() }
+func baseMetrics(_ interface{}) client.Request  { return client.RequestBaseMetrics() }
 
-func localMediated(mediator apiMediator, typ requestType, getVariable ...variableFromRequest) http.HandlerFunc {
+type payloadFromRequest func(r *http.Request) (interface{}, error)
+
+func clientHandler(c client.Local, req func(interface{}) client.Request, getPayload ...payloadFromRequest) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
 
-		variable := ""
-		if len(getVariable) > 0 {
-			variable, err = getVariable[0](r)
+		var payload interface{}
+		if len(getPayload) > 0 {
+			payload, err = getPayload[0](r)
 			if err != nil {
 				writeError(w, fmt.Errorf("unable to get variable: %v", err), http.StatusInternalServerError)
 				return
@@ -45,11 +55,11 @@ func localMediated(mediator apiMediator, typ requestType, getVariable ...variabl
 		defer clean()
 		r = r.WithContext(timeout)
 
-		response, err := mediator.sendReceive(r.Context(), newAPIRequest(typ, variable))
+		response, err := c.Request(r.Context(), req(payload))
 		switch err {
 		case nil:
 			jsonResponse(w, response)
-		case errRateLimited:
+		case client.ErrRateLimited:
 			writeError(w, err, http.StatusServiceUnavailable)
 		case context.DeadlineExceeded:
 			writeError(w, err, http.StatusServiceUnavailable)
@@ -59,15 +69,15 @@ func localMediated(mediator apiMediator, typ requestType, getVariable ...variabl
 	}
 }
 
-func getVariableFromURL(r *http.Request) (string, error) {
+func getVariableFromURL(r *http.Request) (interface{}, error) {
 	ps := httprouter.ParamsFromContext(r.Context())
 	if ps == nil {
-		return "", fmt.Errorf("no params in context")
+		return nil, fmt.Errorf("no params in context")
 	}
 
 	variable := strings.ToLower(strings.TrimSpace(ps.ByName("variable")))
 	if variable == "" {
-		return "", fmt.Errorf("empty variable")
+		return nil, fmt.Errorf("empty variable")
 	}
 
 	return variable, nil

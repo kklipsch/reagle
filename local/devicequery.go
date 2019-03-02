@@ -10,9 +10,9 @@ type DeviceQueryCommand struct {
 }
 
 type DeviceQueryResponse struct {
-	XMLName       xml.Name `xml:"Device"`
-	DeviceDetails DeviceDetails
-	Components    Components
+	XMLName       xml.Name      `xml:"Device" json:"-"`
+	DeviceDetails DeviceDetails `json:"details"`
+	Components    Components    `json:"components"`
 }
 
 func NewDeviceQueryCommand(hardwareAddress string, variables ...string) DeviceQueryCommand {
