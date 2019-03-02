@@ -19,8 +19,7 @@ ARG GO111MODULE=off
 WORKDIR /go/src/$PROJECT_PATH
 COPY . .
 
-RUN go vet $PROJECT_PATH/local
-RUN go vet $PROJECT_PATH/cmd/reagled
+RUN go vet ./...
 RUN go test $TEST_FLAG -v ./... 
 
 RUN mkdir -p /out
