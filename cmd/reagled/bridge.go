@@ -79,7 +79,7 @@ func collectValues(ctx context.Context, ch chan<- prometheus.Metric, response in
 
 	send(ctx, ch, prometheus.MustNewConstMetric(
 		currentDelivered,
-		prometheus.GaugeValue,
+		prometheus.CounterValue,
 		values.Delivered,
 	))
 
