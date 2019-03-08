@@ -10,24 +10,47 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMediateWifiStatus(t *testing.T) {
-	t.Skip("TODO: make this work")
+func TestMediateQuery(t *testing.T) {
+	for _, tc := range []mediateTest{
+		wifiStatusCheck(),
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, clean := context.WithTimeout(context.Background(), time.Second)
+			defer clean()
 
-	ctx, clean := context.WithTimeout(context.Background(), time.Second)
-	defer clean()
+			ts, config := local.StartTestServer(tc.testServer)
+			defer ts.Close()
 
-	ts := local.StartTestServer(local.ServeWifiStatus(local.WifiStatus{Enabled: "enabled", SSID: "ssid"}))
-	defer ts.Close()
+			api := local.New(config)
+			mediator := newMediator(api, time.Second)
 
-	api := local.New(local.Config{Location: ts.URL})
-	mediator := newMediator(api, time.Second)
+			result, err := mediator.query(ctx, tc.typ, tc.payload)
+			require.NoError(t, err)
 
-	result, err := mediator.query(ctx, localWifiStatus, nil)
-	require.NoError(t, err)
+			tc.check(t, result)
+		})
+	}
+}
 
-	status, ok := result.(local.WifiStatus)
-	require.True(t, ok)
+type mediateTest struct {
+	name       string
+	testServer local.TestServerPayload
+	typ        requestType
+	payload    interface{}
+	check      func(*testing.T, interface{})
+}
 
-	assert.Equal(t, "enabled", status.Enabled)
-	assert.Equal(t, "ssid", status.SSID)
+func wifiStatusCheck() mediateTest {
+	return mediateTest{
+		name:       "wifi_status",
+		typ:        localWifiStatus,
+		testServer: local.ServeWifiStatus(local.WifiStatus{Enabled: "enabled", SSID: "ssid"}),
+		check: func(t *testing.T, result interface{}) {
+			status, ok := result.(local.WifiStatus)
+			require.True(t, ok)
+
+			assert.Equal(t, "enabled", status.Enabled)
+			assert.Equal(t, "ssid", status.SSID)
+		},
+	}
 }

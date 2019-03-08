@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 )
 
 //ServeDeviceList returns a payload for testing DeviceList commands
@@ -38,8 +39,10 @@ type TestServerPayload struct {
 }
 
 //StartTestServer returns an httptest.Server that responds similar to the Eagle
-func StartTestServer(payload TestServerPayload) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(testServer(payload)))
+func StartTestServer(payload TestServerPayload) (*httptest.Server, Config) {
+	server := httptest.NewServer(http.HandlerFunc(testServer(payload)))
+	u, _ := url.Parse(server.URL)
+	return server, Config{Location: fmt.Sprintf("%s:%v", u.Hostname(), u.Port())}
 }
 
 func testServer(payload TestServerPayload) func(w http.ResponseWriter, r *http.Request) {
