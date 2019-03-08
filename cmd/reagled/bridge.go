@@ -7,7 +7,6 @@ import (
 
 	"github.com/kklipsch/reagle/client"
 	"github.com/prometheus/client_golang/prometheus"
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -58,8 +57,7 @@ func (bridge *rainForestBridge) Collect(ch chan<- prometheus.Metric) {
 
 	response, err := bridge.c.Request(timeout, client.RequestBaseMetrics())
 	if err != nil {
-		errorsCount.Inc()
-		applicationLogger.WithFields(log.Fields{"err": err}).Errorln("unable to get metrics for prometheus bridge")
+		instrumentError(err, "unable to get metrics for prometheus bridge")
 		response = bridge.previousValues.Load()
 	}
 

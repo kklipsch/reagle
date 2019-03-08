@@ -125,6 +125,8 @@ func start(cliCtx *cli.Context) error {
 		return cli.NewExitError(err, configureErrorCode)
 	}
 
+	initializeErrorCounts()
+
 	applicationLogger.WithFields(log.Fields{"config": config}).Infoln("configured")
 
 	api, err := instrumentedAPI(config.LocalConfig)

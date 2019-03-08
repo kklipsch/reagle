@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -8,13 +9,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
-	errorsCount = promauto.NewCounter(prometheus.CounterOpts{
+	errorsCount = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "errors",
 		Help: "Count of non-fatal errors",
-	})
+	},
+		[]string{"type"},
+	)
 
 	requestsInFlightGauge = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "in_flight_requests",
@@ -56,6 +60,24 @@ var (
 		[]string{"handler", "code", "method"},
 	)
 )
+
+func initializeErrorCounts() {
+	errorsCount.WithLabelValues("context").Inc()
+	errorsCount.WithLabelValues("other").Inc()
+}
+
+func instrumentError(err error, desc string) {
+	if err == nil {
+		return
+	}
+
+	if err == context.DeadlineExceeded {
+		errorsCount.WithLabelValues("context").Inc()
+	} else {
+		errorsCount.WithLabelValues("other").Inc()
+		applicationLogger.WithFields(log.Fields{"err": err}).Errorln(desc)
+	}
+}
 
 func instrumentedAPI(cfg local.Config) (local.API, error) {
 	var err error

@@ -11,7 +11,6 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/kklipsch/reagle/client"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	log "github.com/sirupsen/logrus"
 )
 
 func endpoint(c client.Local) http.Handler {
@@ -100,7 +99,6 @@ func jsonResponse(w http.ResponseWriter, response interface{}) {
 }
 
 func writeError(w http.ResponseWriter, err error, code int) {
-	errorsCount.Inc()
-	applicationLogger.WithFields(log.Fields{"code": code, "error": err}).Errorln("endpoint error")
+	instrumentError(err, "endpoint error")
 	http.Error(w, err.Error(), code)
 }
