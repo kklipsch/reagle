@@ -22,6 +22,25 @@ const (
 	localBaseMetrics
 )
 
+func typeName(t requestType) string {
+	switch t {
+	case localSpecificVariable:
+		return "specific_variable"
+	case localAllVariables:
+		return "all_variables"
+	case localMeterDetails:
+		return "meter_details"
+	case localDeviceList:
+		return "device_list"
+	case localWifiStatus:
+		return "wifi_status"
+	case localBaseMetrics:
+		return "base_metrics"
+	default:
+		return "unknown"
+	}
+}
+
 //RequestSpecificVariable is a Request to do a device query for the provided variable name on the smart meter
 func RequestSpecificVariable(variable string) Request {
 	return request(localSpecificVariable, variable)
@@ -72,19 +91,26 @@ func awaitResult(ctx context.Context, r Request) (interface{}, error) {
 }
 
 func sendResult(ctx context.Context, r Request, result interface{}, err error) {
+	name := typeName(r.typ)
+
 	toSend := result
 	if err != nil {
 		toSend = err
+		errors.WithLabelValues(name).Inc()
+	} else {
+		replies.WithLabelValues(name).Inc()
 	}
 
 	select {
 	case r.resultsPromise <- toSend:
 	case <-ctx.Done():
+		sendErrors.WithLabelValues(name).Inc()
 	}
 }
 
 func request(typ requestType, payload ...interface{}) Request {
 	var p interface{}
+
 	if len(payload) > 0 {
 		p = payload[0]
 	}
