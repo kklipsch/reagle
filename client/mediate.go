@@ -31,6 +31,7 @@ func (m *mediator) mediate(ctx context.Context, requests <-chan Request) {
 				panic("request channel closed should not be possible")
 			}
 
+			cRequests.WithLabelValues(typeName(req.typ)).Inc()
 			result, err := m.request(ctx, req.typ, req.payload)
 			sendResult(ctx, req, result, err)
 		case <-ctx.Done():
@@ -42,6 +43,8 @@ func (m *mediator) mediate(ctx context.Context, requests <-chan Request) {
 
 func (m *mediator) request(ctx context.Context, typ requestType, payload interface{}) (interface{}, error) {
 	if err := EnforceLimit(ctx, m.limit); err != nil {
+		limit.WithLabelValues(typeName(typ)).Inc()
+
 		return nil, err
 	}
 
