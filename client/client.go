@@ -30,6 +30,7 @@ var load sync.Once
 //Get returns the Local
 func Get(ctx context.Context, api local.API, wait time.Duration) Local {
 	load.Do(func() {
+		initMetricsForAllTypes()
 		localclient = NewDangerous(ctx, api, wait)
 	})
 
@@ -54,6 +55,7 @@ func (l Local) Request(ctx context.Context, request Request) (interface{}, error
 	select {
 	case l <- request:
 	case <-ctx.Done():
+		requestCancelled.WithLabelValues(typeName(request.typ)).Inc()
 		return nil, ctx.Err()
 	}
 

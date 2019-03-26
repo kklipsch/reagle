@@ -22,6 +22,17 @@ const (
 	localBaseMetrics
 )
 
+var (
+	allTypes = []requestType{
+		localSpecificVariable,
+		localAllVariables,
+		localMeterDetails,
+		localDeviceList,
+		localWifiStatus,
+		localBaseMetrics,
+	}
+)
+
 func typeName(t requestType) string {
 	switch t {
 	case localSpecificVariable:
@@ -81,11 +92,13 @@ func awaitResult(ctx context.Context, r Request) (interface{}, error) {
 
 		err, is := result.(error)
 		if is {
+			awaitErrors.WithLabelValues(typeName(r.typ)).Inc()
 			return nil, err
 		}
 
 		return result, nil
 	case <-ctx.Done():
+		awaitCancelled.WithLabelValues(typeName(r.typ)).Inc()
 		return nil, ctx.Err()
 	}
 }

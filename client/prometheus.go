@@ -34,6 +34,27 @@ var (
 		[]string{"type"},
 	)
 
+	requestCancelled = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "client_request_errors",
+		Help: "Count of cancelled from the client attempting to send the request down the mediation channel",
+	},
+		[]string{"type"},
+	)
+
+	awaitErrors = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "client_await_errors",
+		Help: "Count of errors from the client after sending the request awaiting the response",
+	},
+		[]string{"type"},
+	)
+
+	awaitCancelled = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "client_await_cancelled",
+		Help: "Count of cancels from the client after sending the request awaiting the response",
+	},
+		[]string{"type"},
+	)
+
 	limit = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "client_rate_limits",
 		Help: "Count of rate limit results from the client",
@@ -41,3 +62,16 @@ var (
 		[]string{"type"},
 	)
 )
+
+func initMetricsForAllTypes() {
+	for _, t := range allTypes {
+		cRequests.WithLabelValues(typeName(t)).Add(0)
+		replies.WithLabelValues(typeName(t)).Add(0)
+		errors.WithLabelValues(typeName(t)).Add(0)
+		sendErrors.WithLabelValues(typeName(t)).Add(0)
+		requestCancelled.WithLabelValues(typeName(t)).Add(0)
+		awaitErrors.WithLabelValues(typeName(t)).Add(0)
+		awaitCancelled.WithLabelValues(typeName(t)).Add(0)
+		limit.WithLabelValues(typeName(t)).Add(0)
+	}
+}
