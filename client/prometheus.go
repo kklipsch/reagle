@@ -41,3 +41,13 @@ var (
 		[]string{"type"},
 	)
 )
+
+func initMetricsForAllTypes() {
+	for _, t := range allTypes {
+		cRequests.WithLabelValue(typeName(t)).Add(0)
+		replies.WithLabelValue(typeName(t)).Add(0)
+		errors.WithLabelValue(typeName(t)).Add(0)
+		sendErrors.WithLabelValue(typeName(t)).Add(0)
+		limit.WithLabelValue(typeName(t)).Add(0)
+	}
+}

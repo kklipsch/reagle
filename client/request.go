@@ -22,6 +22,17 @@ const (
 	localBaseMetrics
 )
 
+var (
+	allTypes = []requestType{
+		localSpecificVariable,
+		localAllVariables,
+		localMeterDetails,
+		localDeviceList,
+		localWifiStatus,
+		localBaseMetrics,
+	}
+)
+
 func typeName(t requestType) string {
 	switch t {
 	case localSpecificVariable:

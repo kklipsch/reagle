@@ -30,6 +30,7 @@ var load sync.Once
 //Get returns the Local
 func Get(ctx context.Context, api local.API, wait time.Duration) Local {
 	load.Do(func() {
+		initMetricsForAllTypes()
 		localclient = NewDangerous(ctx, api, wait)
 	})
 
