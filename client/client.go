@@ -55,6 +55,7 @@ func (l Local) Request(ctx context.Context, request Request) (interface{}, error
 	select {
 	case l <- request:
 	case <-ctx.Done():
+		requestCancelled.WithLabelValues(typeName(request.typ)).Inc()
 		return nil, ctx.Err()
 	}
 
