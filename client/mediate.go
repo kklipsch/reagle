@@ -33,7 +33,7 @@ func (m *mediator) mediate(ctx context.Context, requests <-chan Request) {
 
 			cRequests.WithLabelValues(typeName(req.typ)).Inc()
 			result, err := m.request(ctx, req.typ, req.payload)
-			sendResult(ctx, req, result, err)
+			sendResult(req, result, err)
 		case <-ctx.Done():
 			log.Printf("shutting down mediator due to context cancellation")
 			return
