@@ -35,7 +35,7 @@ var (
 	)
 
 	requestCancelled = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "client_request_errors",
+		Name: "client_request_cancelled",
 		Help: "Count of cancelled from the client attempting to send the request down the mediation channel",
 	},
 		[]string{"type"},

@@ -103,7 +103,7 @@ func awaitResult(ctx context.Context, r Request) (interface{}, error) {
 	}
 }
 
-func sendResult(ctx context.Context, r Request, result interface{}, err error) {
+func sendResult(r Request, result interface{}, err error) {
 	name := typeName(r.typ)
 
 	toSend := result
@@ -116,7 +116,7 @@ func sendResult(ctx context.Context, r Request, result interface{}, err error) {
 
 	select {
 	case r.resultsPromise <- toSend:
-	case <-ctx.Done():
+	default:
 		sendErrors.WithLabelValues(name).Inc()
 	}
 }
@@ -131,6 +131,6 @@ func request(typ requestType, payload ...interface{}) Request {
 	return Request{
 		typ:            typ,
 		payload:        p,
-		resultsPromise: make(chan interface{}),
+		resultsPromise: make(chan interface{}, 1),
 	}
 }
