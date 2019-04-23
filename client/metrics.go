@@ -49,7 +49,7 @@ func getBaseMetrics(ctx context.Context, localAPI local.API, hardwareAddress str
 		return values, err
 	}
 
-	values.Currency, err = getValue("zigbee:Currency", component)
+	values.Currency, err = getValue("zigbee:PriceCurrency", component)
 	return values, err
 }
 
