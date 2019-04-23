@@ -68,5 +68,9 @@ func getValueFloat(name string, v map[string]local.Variable) (float64, error) {
 		return 0, err
 	}
 
+	if value == "undefined" {
+		return 0, nil
+	}
+
 	return strconv.ParseFloat(value, 64)
 }
