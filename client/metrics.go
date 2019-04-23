@@ -19,7 +19,7 @@ type BaseMetrics struct {
 func getBaseMetrics(ctx context.Context, localAPI local.API, hardwareAddress string) (BaseMetrics, error) {
 	values := BaseMetrics{}
 
-	response, err := localAPI.DeviceQuery(ctx, hardwareAddress, "zigbee:InstantaneousDemand", "zigbee:CurrentSummationDelivered", "zigbee:Price", "zigbee:Currency")
+	response, err := localAPI.DeviceQuery(ctx, hardwareAddress, "zigbee:InstantaneousDemand", "zigbee:CurrentSummationDelivered", "zigbee:Price", "zigbee:PriceCurrency")
 	if err != nil {
 		return values, fmt.Errorf("call to api failed: %v", err)
 	}
