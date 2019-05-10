@@ -76,6 +76,5 @@ func getValueFloat(name string, v map[string]local.Variable) (float64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("%s:%s - %v", name, value, err)
 	}
-	
 	return result, nil
 }
