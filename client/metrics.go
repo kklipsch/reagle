@@ -72,5 +72,9 @@ func getValueFloat(name string, v map[string]local.Variable) (float64, error) {
 		return 0, nil
 	}
 
-	return strconv.ParseFloat(value, 64)
+	result, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		return 0, fmt.Errorf("%s:%s - %v", name, value, err)
+	}
+	return result, nil
 }
